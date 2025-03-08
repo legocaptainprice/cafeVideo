@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>cafeVideo - {{ video[2] }}</title>
+</head>
+<body>
+    <div class="cafe-header-navbar">
+        <div class="cafe-header-navbar-container">
+            <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
+            <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
+            <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
+                <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
+            </form>
+            <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
+                {% if username %}
+                    <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">{{username}}</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <!-- If user is not logged in -->
+                    <a href="{{ url_for('loginPage') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="cafe-main-body">
+        <div class="cafe-watch-layout-body">
+            <div class="cafe-video-content">
+                <div class="cafe-video-watch-body">
+                    <div class="cafe-watch-body">
+                        <div class="video-container">
+                            <video width="960" height="540" controls>
+                            <source src="{{ url_for('static', filename='videos/' + video[5]) }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="cafe-watch-title">
+                            <h2>{{ video[2] }}</h2>
+                        </div>
+                        <p>{{ creatorUsername[0] }}</p>
+                        <p>{{ video[3] }}</p>
+                        <p>{{ video[4] }}</p>
+                        <!--
+                        <form action="/commentOnVideo" method="POST" class="cafe-login-details">
+                            <input type="text" name="comment" placeholder="Comment on this video" required><br><br>
+                            <button type="submit">Post comment</button>
+                        </form>
+                        -->
+                        {% if error %}
+                            <p style="color: red">{{error}}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="cafe-comment-section-body">
+                    <div class="cafe-post-comment">
+                        <h2>Comment Section</h2>
+                        {% if username %}
+                        <form action="/postComment" method="POST" class="cafe-comment-form">
+                            <input type="text" name="postComment" placeholder="Comment on this video" class="cafe-comment-box" required>
+                            <button type="submit" class="cafe-comment-button">Comment</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <!--
+                    <div class="cafe-divider">
+                        <br>
+                    </div>
+                    -->
+                    {% for comment in comments %}
+                    <div class="cafe-comment-layout-box">
+                        <div class="cafe-comment-user-details">
+                            <!-- Profile picture should go here -->
+                            <h3>{{ comment[1] }}</h3>
+                        </div>
+                        <div class="cafe-comment-details">
+                            <p>{{ comment[2] }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="cafe-video-recommendation-list-body">
+                <p class="cafe-video-list-title">Recommended videos</p>
+                <div class="cafe-video-featured-item">
+                    {% for video in videos %}
+                    <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
+                        <div class="cafe-video-post-container">
+                            <div class="cafe-video-post-thumbnail">
+                                <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='images/videotemplate.png') }}">
+                            </div>
+                            <div class="cafe-video-post-title">
+                                <p>{{ video[2] }}</p>  <!-- Video Title -->
+                            </div>
+                            <div class="cafe-video-post-channel">
+                                <p>{{ video[1] }}</p>  <!-- Uploader Username -->
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Rename to cafeChannels -->
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>cafeVideo - {{ profileDetails[1] }}</title>
+</head>
+<body>
+    <div class="cafe-header-navbar">
+        <div class="cafe-header-navbar-container">
+            <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
+            <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
+
+            <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
+                <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
+            </form>
+
+            <!-- If the user is logged in, show username and logout button -->
+            <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
+                {% if username %}
+                    <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">{{username}}</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <!-- If user is not logged in -->
+                    <a href="{{ url_for('loginPage') }}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="cafe-main-body">
+        <div class="cafe-sidebar-left">
+            <div class="cafe-sidebar-left-title">
+                <h3>Sidebar Contents</h3>
+            </div>
+            <div class="cafe-sidebar-left-contents">
+                {% if username %}
+                    <a href="{{ url_for('upload') }}">Upload</a>
+                {% else %}
+                    <p>Login to upload videos!</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="cafe-video-list-body">
+            <div class="cafe-profile-list-contents-header">
+                <div class="cafe-profile-list-contents-header-banner">
+                    <img class="cafe-profile-banner" src="{{ url_for('static', filename='images/profilebannertemplate.png') }}">
+                </div>
+                <p class="cafe-profile-list-title">{{ profileDetails[1] }}'s Profile</p>
+                <div class="cafe-profile-showcases-row">
+                    <div class="cafe-profile-picture-showcase">
+                        <img class="cafe-profile-picture-showcase-image" src="{{ url_for('static', filename='images/profilepicturetest.jpg') }}">
+                    </div>
+                    <div class="cafe-profile-showcase-small">
+                        <div class="cafe-profile-showcase-bio-title-layout">
+                            <p class="cafe-profile-showcase-bio-title">
+                                Bio
+                            </p>
+                        </div>
+                        <div class="cafe-profile-showcase-bio-description">
+                            <p>{{ profileDetails[8] }}</p>
+                        </div>
+                    </div>
+                    <div class="cafe-profile-showcase-small">
+                        <div class="cafe-profile-showcase-bio-title-layout">
+                            <p class="cafe-profile-showcase-bio-title">
+                                Join Date
+                            </p>
+                        </div>
+                        <div class="cafe-profile-showcase-bio-description">
+                            <p>{{ profileDetails[12] }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cafe-profile-list-contents-videos">
+                <p class="cafe-profile-list-title">{{ profileDetails[1] }}'s Videos</p>
+                <div class="cafe-video-posts-row">
+                    <!-- Videos go in this element -->
+                    {% for video in videos %}
+                    <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
+                        <div class="cafe-video-post-container">
+                            <div class="cafe-video-post-thumbnail">
+                                <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='images/videotemplate.png') }}">
+                            </div>
+                            <div class="cafe-video-post-title">
+                                <p>{{ video[2] }}</p>  <!-- Video Title -->
+                            </div>
+                            <div class="cafe-video-post-channel">
+                                <p>{{ video[1] }}</p>  <!-- Uploader Username -->
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <!--
+            {% if username %}
+                <div class="cafe-video-list-contents-subscriptions">
+                    <p class="cafe-video-list-title">Subscriptions Feed</p>
+                    <div class="cafe-video-posts-row">
+                        < Videos go in this element >
+                    </div>
+                </div>
+            {% endif %}
+            -->
+        </div>
+    </div>
+    <!-- Rename to cafeChannels -->
+
+</body>
+</html>
