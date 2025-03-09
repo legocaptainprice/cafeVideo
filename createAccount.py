@@ -4,6 +4,7 @@ from datetime import datetime
 
 def createAccount(username, hashed_password):
     conn = sqlite3.connect('cafeDatabase.db')
+    conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()
 

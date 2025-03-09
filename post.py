@@ -1,14 +1,21 @@
 import sqlite3
+import time
+from datetime import datetime
+import time_converter
 
 
-def uploadVideoToDatabase(userID, title, description, videoTags, filename):
+def uploadVideoToDatabase(userID, title, description, videoTags, filename, thumbnailFilename):
     conn = sqlite3.connect('cafeDatabase.db')
+    conn.execute('PRAGMA foreign_keys = ON')
+
+    datetimeOfPublishedVideo = int(time.time())
 
     cursor = conn.cursor()
 
     try:
-        cursor.execute("INSERT INTO videos (userID, videoTitle, videoDescription, videoTags, videoFile) VALUES (?, ?, ?, ?, ?)",
-                       (userID, title, description, videoTags, filename))
+        cursor.execute("""INSERT INTO videos (userID, videoTitle, videoDescription, videoTags, videoFile, 
+                                videoThumbnail, datetime) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                       (userID, title, description, videoTags, filename, thumbnailFilename, datetimeOfPublishedVideo))
         conn.commit()
         print("Video uploaded")
         return True, "Video uploaded successfully"

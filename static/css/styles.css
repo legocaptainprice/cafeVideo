@@ -181,14 +181,21 @@ a {
     padding: 0px;
     height: 325px;
     width: 375px;
+    max-height: 325px;
+    max-width: 375px;
     border-radius: 5px;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
 }
 
+.cafe-video-post-container-margin-bottom {
+    margin-bottom: 29px;
+}
+
 .cafe-video-post-thumbnail {
     height: 256px;
     width: 375px;
+    object-fit: cover;
     border-radius: 5px;
 }
 
@@ -202,9 +209,11 @@ a {
 }
 
 .cafe-video-posts-row {
-    display: flex;  /* Flexbox for horizontal alignment */
-    gap: 34px;  /* Space between video posts */
-    flex-wrap: wrap;  /* Don't wrap items to a new line */
+     display: flex;
+     flex-wrap: wrap;
+     justify-content: space-evenly;  /* Ensures even spacing */
+     align-items: center;
+     width: 100%;
 }
 
 p {
@@ -213,6 +222,15 @@ p {
 
 h1, h2, h3 {
     font-family: 'Poppins', sans-serif;
+}
+
+label {
+    font-family: 'Roboto', sans-serif;
+}
+
+.cafe-align-label-input {
+    display: flex;
+    flex-direction: column;
 }
 
 .otherParagraphs {
@@ -434,6 +452,20 @@ video {
     outline: none;
 }
 
+.cafe-edit-bio-box {
+    width: 500px;
+    border-radius: 5px;
+    color: white;
+    background: rgba(178, 122, 84, 0);
+    border: 2px solid #C78A4B;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    height: 100px;
+}
+
+.cafe-edit-bio-box::placeholder {
+    color: white;
+}
+
 .cafe-search-layout {
     margin-left: auto;
 }
@@ -460,11 +492,11 @@ video {
 
 .cafe-video-post-title {
     font-weight: bold;
-    margin-left: 10px
+    margin-left: 1px;
 }
 
 .cafe-video-post-channel {
-    margin-left: 10px;
+    margin-left: 1px;
 }
 
 .cafe-profile-list-contents-header {
@@ -740,12 +772,16 @@ video {
     border: 1px solid white;
 }
 
+.cafe-watch-video-stats-vertical-divider-invisible {
+    border: 1px solid rgba(0,0,0,0);
+}
+
 .cafe-watch-views-title {
     align-self: flex-center;
 }
 
 .cafe-video-post-views {
-    margin-left: 10px;
+    margin-left: 1px;
 }
 
 .cafe-hide-link-tag {

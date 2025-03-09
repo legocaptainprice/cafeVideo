@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <title>cafeVideo - Upload</title>
+    <title>cafeVideo - Edit Profile</title>
 </head>
 <body>
     <div class="cafe-header-navbar">
@@ -30,25 +30,27 @@
                 <h3>Sidebar Contents</h3>
             </div>
             <div class="cafe-sidebar-left-contents">
-                <p>Upload a video to have it displayed on the home page!</p>
+                <p>Edit your profile to make your profile look unique!</p>
             </div>
         </div>
         <div class="cafe-video-list-body">
             <div class="cafe-upload-body">
                 <div class="cafe-login-title">
-                    <h1>Upload to cafeVideo!</h1>
+                    <h1>Edit Profile</h1>
                 </div>
-                <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='images/videotemplate.png') }}">
-                <p>Uploading thumbnails is currently available so every video will use this placeholder</p>
-                <form action="/uploadVideo" method="POST" class="cafe-login-details" enctype="multipart/form-data">
-                    <label for="video" class="cafe-upload-button otherParagraphs">Upload a video</label>
-                    <input type="file" id="video" name="video" accept="video/*" required hidden><br><br>
-                    <label for="thumbnail" class="cafe-upload-button otherParagraphs">Upload a thumbnail</label>
-                    <input type="file" id="thumbnail" name="thumbnail" accept="image/*" hidden><br><br>
-                    <input type="text" name="title" placeholder="Enter a title" class="cafe-comment-box" required><br><br>
-                    <input type="text" name="description" placeholder="Enter a description" class="cafe-comment-box" required><br><br>
-                    <input type="text" name="videoTags" placeholder="Enter some video tags, separate using commas" class="cafe-comment-box"><br><br>
-                    <button type="submit" class="cafe-comment-button">Upload</button>
+                <img class="cafe-profile-banner" src="{{ url_for('static', filename='images/profilebannertemplate.png') }}">
+                <img class="cafe-profile-picture-showcase-image" src="{{ url_for('static', filename='images/profilepicturetest.jpg') }}">
+                <p>Upload a profile picture and thumbnail to make your profile more personal</p>
+                <form action="/" method="POST" class="cafe-login-details" enctype="multipart/form-data">
+                    <label for="profilePicture" class="cafe-upload-button otherParagraphs">Upload a profile picture</label>
+                    <input type="file" id="profilePicture" name="profilePicture" accept="image/*" hidden><br><br>
+                    <label for="profileBanner" class="cafe-upload-button otherParagraphs">Upload a profile banner</label>
+                    <input type="file" id="profileBanner" name="profileBanner" accept="image/*" hidden><br><br>
+                    <div class="cafe-align-label-input">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" name="bio" maxlength="240" placeholder="Enter a bio" class="cafe-edit-bio-box" required></textarea><br><br>
+                    </div>
+                    <button type="submit" class="cafe-comment-button">Save</button>
                 </form>
                 {% if error %}
                     <p style="color: red">{{error}}</p>

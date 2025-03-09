@@ -47,7 +47,7 @@
                                         </div>
                                         <div class="cafe-watch-creator-name-subscriber-count">
                                             <p>{{ creatorUsername[0] }}</p>
-                                            <p>{{ num_of_subscribers }} Subscribers</p>
+                                            <p>{{ num_of_subscribers }} subscriber{{'s' if num_of_subscribers > 1}}</p>
                                         </div>
                                     </a>
                                 </div>
@@ -65,7 +65,12 @@
                                         </div>
                                         <p class="cafe-center-text">{{ num_of_likes }}</p>
                                     </div>
-                                    <div class="cafe-watch-video-stats-vertical-divider"></div>
+                                    {% if creatorUserID != userID %}
+                                        <div class="cafe-watch-video-stats-vertical-divider"></div>
+                                    {% else %}
+                                        <div class="cafe-watch-video-stats-vertical-divider-invisible"></div>
+                                    {% endif %}
+                                    {% if creatorUserID != userID %}
                                     <div class="cafe-watch-subscribe">
                                         <div class="cafe-watch-subscribe-button">
                                             <a class="cafe-hide-link-tag" href="{{ url_for('subscribeToUser', creatorID=creatorUserID) }}">
@@ -86,6 +91,7 @@
                                             </a>
                                         </div>
                                     </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="cafe-align-watch-description">
@@ -93,10 +99,16 @@
                                     <p>Description</p>
                                 </div>
                                 <p class="cafe-align-description-contents">{{ video[3] }}</p>
+                                {% if video[4] %}
                                 <div class="cafe-watch-video-tags-title">
                                     <p>Video Tags</p>
                                 </div>
                                 <p class="cafe-align-description-contents">{{ video[4] }}</p>
+                                {% endif %}
+                                <div class="cafe-watch-video-tags-title">
+                                    <p>Upload Date</p>
+                                </div>
+                                <p class="cafe-align-description-contents">{{ datePublished }}</p>
                             </div>
                         </div>
                         <!--
@@ -145,7 +157,7 @@
                     <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
                         <div class="cafe-video-post-container">
                             <div class="cafe-video-post-thumbnail">
-                                <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='images/videotemplate.png') }}">
+                                <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + video[4]) }}">
                             </div>
                             <div class="cafe-align-video-post-details">
                                 <div class="cafe-video-post-profile-picture">
@@ -159,7 +171,7 @@
                                         <p>{{ video[1] }}</p>  <!-- Uploader Username -->
                                     </div>
                                     <div class="cafe-video-post-views">
-                                        <p>{{ video[3] }} views</p>
+                                        <p>{{ video[3] }} views · {{ time_ago(video[5]) }}</p>
                                     </div>
                                 </div>
                             </div>

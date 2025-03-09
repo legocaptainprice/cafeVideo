@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect
 import sqlite3, createAccount, post, os
+from time_converter import time_ago
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -8,14 +9,21 @@ cafe.secret_key = "supersecretkey"
 
 cafe.config['UPLOAD_FOLDER'] = 'static/videos/'
 cafe.config['ALLOWED_EXTENSIONS'] = {'mp4', 'avi', 'mov', 'mkv'}
+cafe.config['UPLOAD_THUMBNAILS_FOLDER'] = 'static/thumbnails'
+cafe.config['ALLOWED_THUMBNAIL_EXTENSIONS'] = {'jpg', 'png', 'webp'}
+
+# Ensure the directories for these folders exist
+os.makedirs(cafe.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(cafe.config['UPLOAD_THUMBNAILS_FOLDER'], exist_ok=True)
 
 
-def allowedFiletypes(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in cafe.config['ALLOWED_EXTENSIONS']
+def allowedFiletypes(filename, allowedExtensions):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowedExtensions
 
 
 def connect_to_database():
     conn = sqlite3.connect("cafeDatabase.db")
+    conn.execute('PRAGMA foreign_keys = ON')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -23,18 +31,26 @@ def connect_to_database():
 @cafe.route('/')
 def indexPage():
     conn = sqlite3.connect('cafeDatabase.db')
+    conn.execute('PRAGMA foreign_keys = ON')
     cursor = conn.cursor()
 
     # Fetch the latest videos for the new videos feed
     cursor.execute("""
-            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views
+            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime
             FROM videos
             JOIN accounts ON videos.userID = accounts.userID
             ORDER BY videoID DESC  -- Shows newest first
         """)
     videos = cursor.fetchall()  # List of tuples
+    # cursor.execute("""
+    #        SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail
+    #        FROM videos
+    #        JOIN accounts ON video.userID = accounts.userID
+    #
+    #    """)
     conn.close()
-    return render_template('index.html', username=session.get("username"), videos=videos, userID=session.get("userID"))
+    return render_template('index.html', username=session.get("username"), videos=videos, userID=session.get("userID"),
+                           time_ago=time_ago)
 
 
 @cafe.route('/login')
@@ -49,6 +65,7 @@ def loginAuthAPI():
         password = request.form['password']
 
         conn = connect_to_database()
+        conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
         # Fetch user from accounts table
@@ -107,23 +124,38 @@ def uploadVideo():
     if request.method == 'POST':
         if 'video' not in request.files:
             return 'No file part', 400
-        file = request.files['video']
+        videoFile = request.files['video']
+        thumbnail = request.files['thumbnail']
+        defaultThumbnail = 'videotemplate.png'
 
-        if file.filename == '':
+        if videoFile.filename == '':
             return 'No selected file', 400
 
-        if file and allowedFiletypes(file.filename):
-            filename = secure_filename(file.filename)
+        if thumbnail.filename == '':
+            thumbnail.filename = defaultThumbnail
+
+        if 'thumbnail' not in request.files:
+            thumbnail.filename = defaultThumbnail
+
+        if videoFile and allowedFiletypes(videoFile.filename, cafe.config['ALLOWED_EXTENSIONS']):
+            # Upload the video file to its destination
+            filename = secure_filename(videoFile.filename)
             filepath = os.path.join(cafe.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+            videoFile.save(filepath)
+            # Upload the thumbnail file to its destination
+            thumbnailFilename = secure_filename(thumbnail.filename)
+            thumbnailPath = os.path.join(cafe.config['UPLOAD_THUMBNAILS_FOLDER'], thumbnailFilename)
+            thumbnail.save(thumbnailPath)
+            print(thumbnailPath)
             userID = session.get('userID')
-            print(userID)
+            print(filename)
             title = request.form['title']
             description = request.form['description']
             videoTags = request.form['videoTags']
             # videoFile = request.form['videoURL']
 
-            success, message = post.uploadVideoToDatabase(userID, title, description, videoTags, filename)
+            success, message = post.uploadVideoToDatabase(userID, title, description, videoTags, filename,
+                                                          thumbnailFilename)
 
             if success:
                 return redirect(url_for('indexPage'))
@@ -140,6 +172,7 @@ def watchPage():
     if videoID:
         # Retrieve video details
         conn = sqlite3.connect('cafeDatabase.db')
+        conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM videos WHERE videoID = ?", (videoID,))
         video = cursor.fetchone()
@@ -162,7 +195,7 @@ def watchPage():
             cursor.execute("SELECT username FROM accounts WHERE userID = ?", (video[1],))
             creatorUsername = cursor.fetchone()
             cursor.execute("""
-                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime
                             FROM videos
                             JOIN accounts ON videos.userID = accounts.userID
                             ORDER BY videoID DESC  -- Shows newest first
@@ -189,16 +222,19 @@ def watchPage():
             cursor.execute("SELECT * FROM likedVideos WHERE videoID = ?", (videoID,))
             likes = cursor.fetchall()
             num_of_likes = len(likes)
-            cursor.execute("SELECT * FROM likedVideos WHERE videoID = ? AND userID = ?", (videoID, session.get("userID")))
+            cursor.execute("SELECT * FROM likedVideos WHERE videoID = ? AND userID = ?",
+                           (videoID, session.get("userID")))
             isLikedVideo = cursor.fetchone()
             if isLikedVideo:
                 isLikedVideo = isLikedVideo[0]
+            timestamp = int(video[6])
+            datePublished = time_ago(timestamp)
             return render_template('watch.html', video=video, username=username, videos=videos,
                                    creatorUsername=creatorUsername, comments=comments, userID=session.get("userID"),
                                    creatorUserID=video[1], num_of_comments=num_of_comments,
                                    currentViewCount=currentViewCount, num_of_subscribers=num_of_subscribers,
                                    isSubscribedToChannel=isSubscribedToChannel, num_of_likes=num_of_likes,
-                                   isLikedVideo=isLikedVideo)
+                                   isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago)
         else:
             return "Video not found", 404
     else:
@@ -232,11 +268,12 @@ def searchForVideo():
 
     if searchQuery:
         conn = sqlite3.connect('cafeDatabase.db')
+        conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
         # Fetch the latest videos for the new videos feed
         cursor.execute("""
-                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views
+                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime
                     FROM videos
                     JOIN accounts ON videos.userID = accounts.userID
                     WHERE videos.videoTitle LIKE ?
@@ -248,7 +285,7 @@ def searchForVideo():
 
         conn.close()
         return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
-                               num_of_videos=num_of_videos, userID=session.get("userID"))
+                               num_of_videos=num_of_videos, userID=session.get("userID"), time_ago=time_ago)
     else:
         return redirect(url_for("indexPage"))
 
@@ -260,6 +297,7 @@ def getAccountProfile():
 
     if userID:
         conn = sqlite3.connect('cafeDatabase.db')
+        conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
         # Check if the userID exists
@@ -277,7 +315,7 @@ def getAccountProfile():
 
             # Fetch the latest videos for the new videos feed
             cursor.execute("""
-                                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views
+                                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime
                                 FROM videos
                                 JOIN accounts ON videos.userID = accounts.userID
                                 WHERE videos.userID = ?
@@ -286,7 +324,7 @@ def getAccountProfile():
             videos = cursor.fetchall()  # List of tuples
 
             return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
-                                   userID=session.get("userID"))
+                                   userID=session.get("userID"), time_ago=time_ago)
         else:
             return redirect(url_for("indexPage"))
     else:
@@ -301,25 +339,29 @@ def subscribeToUser():
     creatorUserID = request.args.get('creatorID')
     subscriberUserID = session["userID"]
 
-    conn = sqlite3.connect('cafeDatabase.db')
-    cursor = conn.cursor()
+    if int(creatorUserID) != int(subscriberUserID):
+        conn = sqlite3.connect('cafeDatabase.db')
+        conn.execute('PRAGMA foreign_keys = ON')
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
-                   (subscriberUserID, creatorUserID))
-    isSubscribed = cursor.fetchone()
-
-    if isSubscribed:
-        cursor.execute("DELETE FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
+        cursor.execute("SELECT * FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
                        (subscriberUserID, creatorUserID))
-        conn.commit()
-        print("User has been unsubscribed")
-        conn.close()
-        return redirect(request.referrer)
+        isSubscribed = cursor.fetchone()
+
+        if isSubscribed:
+            cursor.execute("DELETE FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
+                           (subscriberUserID, creatorUserID))
+            conn.commit()
+            print("User has been unsubscribed")
+            conn.close()
+            return redirect(request.referrer)
+        else:
+            cursor.execute("INSERT INTO subscriptions (userID, subscribedToUserID) VALUES (?, ?)",
+                           (subscriberUserID, creatorUserID))
+            conn.commit()
+            conn.close()
+            return redirect(request.referrer)
     else:
-        cursor.execute("INSERT INTO subscriptions (userID, subscribedToUserID) VALUES (?, ?)",
-                       (subscriberUserID, creatorUserID))
-        conn.commit()
-        conn.close()
         return redirect(request.referrer)
 
 
@@ -332,32 +374,47 @@ def likeVideoFromCreatorID():
     creatorUserID = request.args.get('creatorID')
     userID = session["userID"]
 
-    conn = sqlite3.connect('cafeDatabase.db')
-    cursor = conn.cursor()
+    if int(creatorUserID) != int(userID):
+        conn = sqlite3.connect('cafeDatabase.db')
+        conn.execute('PRAGMA foreign_keys = ON')
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM videos WHERE videoID = ?", (videoID,))
-    videoExists = cursor.fetchone()
-    if videoExists:
+        cursor.execute("SELECT * FROM videos WHERE videoID = ?", (videoID,))
+        videoExists = cursor.fetchone()
+        if videoExists:
 
-        cursor.execute("SELECT * FROM likedVideos WHERE videoID = ? AND creatorID = ? AND userID = ?",
-                   (videoID, creatorUserID, userID))
-        isLikedVideo = cursor.fetchone()
+            cursor.execute("SELECT * FROM likedVideos WHERE videoID = ? AND creatorID = ? AND userID = ?",
+                           (videoID, creatorUserID, userID))
+            isLikedVideo = cursor.fetchone()
 
-        if isLikedVideo:
-            cursor.execute("DELETE FROM likedVideos WHERE videoID = ? AND creatorID = ? AND userID = ?",
-                       (videoID, creatorUserID, userID))
-            conn.commit()
-            print("User has unliked the video")
-            conn.close()
-            return redirect(request.referrer)
+            if isLikedVideo:
+                cursor.execute("DELETE FROM likedVideos WHERE videoID = ? AND creatorID = ? AND userID = ?",
+                               (videoID, creatorUserID, userID))
+                conn.commit()
+                print("User has unliked the video")
+                conn.close()
+                return redirect(request.referrer)
+            else:
+                cursor.execute("INSERT INTO likedVideos (videoID, creatorID, userID) VALUES (?, ?, ?)",
+                               (videoID, creatorUserID, userID))
+                conn.commit()
+                conn.close()
+                return redirect(request.referrer)
         else:
-            cursor.execute("INSERT INTO likedVideos (videoID, creatorID, userID) VALUES (?, ?, ?)",
-                       (videoID, creatorUserID, userID))
-            conn.commit()
-            conn.close()
-            return redirect(request.referrer)
+            return redirect(url_for("indexPage"))
     else:
-        return redirect(url_for("indexPage"))
+        return redirect(request.referrer)
+
+
+@cafe.route('/editProfile')
+def editUserProfile():
+    username = session.get("username")
+    userID = session.get("userID")
+
+    if username:
+        return render_template("edit_profile.html", username=username, userID=userID)
+    else:
+        return redirect(url_for('indexPage'))
 
 
 cafe.run("127.0.0.1", 5000, debug=True)
