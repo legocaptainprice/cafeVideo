@@ -98,3 +98,20 @@ def sendProfileBioToDatabase(bio, userID):
     finally:
         cursor.close()
         conn.close()
+
+
+def updateProfileColorTheme(profileColorTheme, userID):
+    conn = sqlite3.connect('cafeDatabase.db')
+    conn.execute('PRAGMA foreign_keys = ON')
+
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('UPDATE profiles SET profileColorTheme = ? WHERE userID = ?', (profileColorTheme, userID))
+        conn.commit()
+        return True, "Profile Color Theme has been updated"
+    except sqlite3.IntegrityError:
+        return False, "Profile Color Theme failed to update"
+    finally:
+        cursor.close()
+        conn.close()

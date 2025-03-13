@@ -15,7 +15,7 @@ def createAccount(username, hashed_password):
         userID = cursor.fetchone()
         joinDate = datetime.today()
         formatted_joinDate = joinDate.strftime("%d/%m/%Y")
-        cursor.execute("INSERT INTO profiles (userID, joinDate) VALUES (?, ?)", (userID[0], formatted_joinDate))
+        cursor.execute("INSERT INTO profiles (userID, joinDate, profileColorTheme) VALUES (?, ?, ?)", (userID[0], formatted_joinDate, 5))
         conn.commit()
         print("Account created")
         return True, "Account created successfully!" # Return success message

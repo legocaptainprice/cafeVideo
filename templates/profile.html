@@ -22,7 +22,7 @@
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
                     <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                        <img class="cafe-navbar-pfp" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture if profilePicture else 'profilepicturetest.png')) }}">
+                        <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
                     </a>
                 {% else %}
                     <!-- If user is not logged in -->
@@ -45,22 +45,22 @@
             </div>
         </div>
         <div class="cafe-video-list-body">
-            <div class="cafe-profile-list-contents-header">
+            <div class="cafe-profile-list-contents-header" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
                 <div class="cafe-profile-list-contents-header-banner">
                     <img class="cafe-profile-banner" src="{{ url_for('static', filename='profile/banner/' + (profileDetails[10] if profileDetails[10] else 'profilebannertemplate.png')) }}">
                 </div>
-                <div class="cafe-profile-list-title-unique">
+                <div class="cafe-profile-list-title-unique" style="background-color: {{ profileDetails[16] or '#C78A4B' }} !important;">
                     <p>{{ profileDetails[1] }}</p>
                     {% if profileDetails[0] == userID %}
-                        <a href="/editProfile" class="cafe-profile-list-settings">Settings</a>
+                        <a href="/editProfile" class="cafe-profile-list-settings" style="background-color: {{ profileDetails[16] or '#C78A4B' }} !important;">Settings</a>
                     {% endif %}
                 </div>
                 <!-- <p class="cafe-profile-list-title">{{ profileDetails[1] }}'s Profile</p> -->
                 <div class="cafe-profile-showcases-row">
-                    <div class="cafe-profile-picture-showcase">
+                    <div class="cafe-profile-picture-showcase" style="border-color: {{ profileDetails[17] or profileDetails[15] or '#C78A4B' }} !important;">
                         <img class="cafe-profile-picture-showcase-image" src="{{ url_for('static', filename='profile/pfp/' + (profileDetails[9] if profileDetails[9] else 'profilepicturetest.png')) }}">
                     </div>
-                    <div class="cafe-profile-showcase-small">
+                    <div class="cafe-profile-showcase-small" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
                         <div class="cafe-profile-showcase-bio-title-layout">
                             <p class="cafe-profile-showcase-bio-title">
                                 Bio
@@ -70,7 +70,7 @@
                             <p>{{ profileDetails[8] }}</p>
                         </div>
                     </div>
-                    <div class="cafe-profile-showcase-small">
+                    <div class="cafe-profile-showcase-small" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
                         <div class="cafe-profile-showcase-bio-title-layout">
                             <p class="cafe-profile-showcase-bio-title">
                                 Join Date
@@ -82,13 +82,13 @@
                     </div>
                 </div>
             </div>
-            <div class="cafe-profile-list-contents-videos">
-                <p class="cafe-profile-list-title">{{ profileDetails[1] }}'s Videos</p>
+            <div class="cafe-profile-list-contents-videos" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
+                <p class="cafe-profile-list-title" style="background-color: {{ profileDetails[16] or '#C78A4B' }} !important;">{{ profileDetails[1] }}'s Videos</p>
                 <div class="cafe-video-posts-row">
                     <!-- Videos go in this element -->
                     {% for video in videos %}
                     <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
-                        <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
+                        <div class="cafe-video-post-container cafe-video-post-container-margin-bottom" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
                             <div class="cafe-video-post-thumbnail">
                                 <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + video[4]) }}">
                             </div>

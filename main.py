@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, session, jsonify, redirect
+from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash
 import sqlite3, createAccount, post, os
 from time_converter import time_ago
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -44,22 +44,27 @@ def indexPage():
 
     # Fetch the latest videos for the new videos feed
     cursor.execute("""
-            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture
+            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
             FROM videos
             JOIN accounts ON videos.userID = accounts.userID
             JOIN profiles ON profiles.userID = accounts.userID
+            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
             ORDER BY videoID DESC  -- Shows newest first
         """)
     videos = cursor.fetchall()  # List of tuples
 
     if username:
-        cursor.execute("SELECT profilePicture FROM profiles WHERE userID = ?", (userID,))
+        cursor.execute("""
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                FROM profiles 
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE userID = ?""", (userID,))
         profilePicture = cursor.fetchone()
     else:
         profilePicture = ["profilepicturetest.png"]
     conn.close()
     return render_template('index.html', username=username, videos=videos, userID=userID,
-                           time_ago=time_ago, profilePicture=profilePicture[0])
+                           time_ago=time_ago, profilePicture=profilePicture)
 
 
 @cafe.route('/login')
@@ -127,10 +132,14 @@ def upload():
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
-        cursor.execute("SELECT profilePicture FROM profiles WHERE userID = ?", (userID,))
+        cursor.execute("""
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor 
+                                FROM profiles 
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE userID = ?""", (userID,))
         profilePicture = cursor.fetchone()
 
-        return render_template("upload.html", username=username, userID=session.get("userID"), profilePicture=profilePicture[0])
+        return render_template("upload.html", username=username, userID=session.get("userID"), profilePicture=profilePicture)
     else:
         return redirect(url_for('loginPage'))
 
@@ -193,6 +202,7 @@ def watchPage():
         cursor.execute("""SELECT * 
                                 FROM videos 
                                 JOIN profiles ON profiles.userID = videos.userID
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE videoID = ?""", (videoID,))
         video = cursor.fetchone()
 
@@ -214,18 +224,20 @@ def watchPage():
             cursor.execute("SELECT username FROM accounts WHERE userID = ?", (video[1],))
             creatorUsername = cursor.fetchone()
             cursor.execute("""
-                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
                             FROM videos
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
+                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             ORDER BY videoID DESC  -- Shows newest first
                         """)
             videos = cursor.fetchall()  # List of tuples
             cursor.execute("""
-                            SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture
+                            SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, profileColorSets.profilePictureBorderColor
                             FROM comments
                             JOIN accounts ON comments.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
+                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             WHERE videoID = ? 
                             ORDER BY commentID DESC 
                         """, (videoID,))
@@ -253,7 +265,11 @@ def watchPage():
             datePublished = time_ago(timestamp)
 
             if username:
-                cursor.execute("SELECT profilePicture FROM profiles WHERE userID = ?", (userID,))
+                cursor.execute("""
+                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                        FROM profiles 
+                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                        WHERE userID = ?""", (userID,))
                 profilePicture = cursor.fetchone()
             else:
                 profilePicture = ["profilepicturetest.png"]
@@ -263,7 +279,7 @@ def watchPage():
                                    creatorUserID=video[1], num_of_comments=num_of_comments,
                                    currentViewCount=currentViewCount, num_of_subscribers=num_of_subscribers,
                                    isSubscribedToChannel=isSubscribedToChannel, num_of_likes=num_of_likes,
-                                   isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago, profilePicture=profilePicture[0])
+                                   isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago, profilePicture=profilePicture)
         else:
             return "Video not found", 404
     else:
@@ -303,10 +319,11 @@ def searchForVideo():
 
         # Fetch the latest videos for the new videos feed
         cursor.execute("""
-                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture
+                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
                     FROM videos
                     JOIN accounts ON videos.userID = accounts.userID
                     JOIN profiles ON profiles.userID = accounts.userID
+                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                     WHERE videos.videoTitle LIKE ?
                     ORDER BY videoID DESC  -- Shows newest first
                 """, (searchQueryForDB,))
@@ -317,14 +334,18 @@ def searchForVideo():
         num_of_videos = len(videos)
 
         if username:
-            cursor.execute("SELECT profilePicture FROM profiles WHERE userID = ?", (userID,))
+            cursor.execute("""
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                    FROM profiles 
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    WHERE userID = ?""", (userID,))
             profilePicture = cursor.fetchone()
         else:
             profilePicture = ["profilepicturetest.png"]
 
         conn.close()
         return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
-                               num_of_videos=num_of_videos, userID=userID, time_ago=time_ago, profilePicture=profilePicture[0])
+                               num_of_videos=num_of_videos, userID=userID, time_ago=time_ago, profilePicture=profilePicture)
     else:
         return redirect(url_for("indexPage"))
 
@@ -349,6 +370,7 @@ def getAccountProfile():
                                 SELECT * 
                                 FROM accounts 
                                 JOIN profiles ON accounts.userID = profiles.userID
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE accounts.userID = ?
                                 """, (userID,))
             profileDetails = cursor.fetchone()
@@ -364,13 +386,17 @@ def getAccountProfile():
             videos = cursor.fetchall()  # List of tuples
 
             if username:
-                cursor.execute("SELECT profilePicture FROM profiles WHERE userID = ?", (userID_session,))
+                cursor.execute("""
+                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                        FROM profiles 
+                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                        WHERE userID = ?""", (userID_session,))
                 profilePicture = cursor.fetchone()
             else:
                 profilePicture = ["profilepicturetest.png"]
 
             return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
-                                   userID=userID_session, time_ago=time_ago, profilePicture=profilePicture[0])
+                                   userID=userID_session, time_ago=time_ago, profilePicture=profilePicture)
         else:
             return redirect(url_for("indexPage"))
     else:
@@ -462,9 +488,18 @@ def editUserProfile():
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
-        cursor.execute('SELECT profilePicture, profileBanner FROM profiles WHERE userID = ?', (userID,))
+        cursor.execute("""
+                                SELECT profilePicture, profileBanner, profileColorSets.profilePictureBorderColor 
+                                FROM profiles 
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE userID = ?""", (userID,))
         profileInfo = cursor.fetchone()
-        return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo)
+
+        cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
+        profileColorSets = cursor.fetchall()
+
+        return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo,
+                               profileColorSets=profileColorSets)
     else:
         return redirect(url_for('indexPage'))
 
@@ -478,6 +513,11 @@ def saveProfileSettings():
         profilePictureDefault = "profilepicturetest.png"
         userID = session.get('userID')
         bio = request.form["bio"]
+        try:
+            profileColorTheme = request.form["profileTheme"]
+        except:
+            profileColorTheme = 5
+            print("Defaulting")
         success = False
         message = ""
 
@@ -518,10 +558,14 @@ def saveProfileSettings():
         if bio != '':
             success, message = post.sendProfileBioToDatabase(bio, userID)
 
+        if profileColorTheme != '':
+            success, message = post.updateProfileColorTheme(profileColorTheme, userID)
+
         if success:
             return redirect(url_for('getAccountProfile'))
         else:
-            return render_template('edit_profile.html', error=message)
+            flash(message, 'error')
+            return redirect(url_for('editUserProfile'))
 
 
 @cafe.errorhandler(404)
@@ -534,10 +578,14 @@ def pageNotFound(error):
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
-        cursor.execute("SELECT profilePicture FROM profiles WHERE userID = ?", (userID,))
+        cursor.execute("""
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                FROM profiles 
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE userID = ?""", (userID,))
         profilePicture = cursor.fetchone()
 
-        return render_template('404.html', username=username, userID=userID, profilePicture=profilePicture[0]), 404
+        return render_template('404.html', username=username, userID=userID, profilePicture=profilePicture), 404
     else:
         return render_template('404.html'), 404
 

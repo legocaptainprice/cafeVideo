@@ -19,7 +19,7 @@
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
                     <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                        <img class="cafe-navbar-pfp" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
+                        <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[2] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
                     </a>
                 {% else %}
                     <!-- If user is not logged in -->
@@ -56,6 +56,13 @@
                         <label for="bio">Bio</label>
                         <textarea id="bio" name="bio" maxlength="240" placeholder="Enter a bio" class="cafe-edit-bio-box"></textarea><br><br>
                     </div>
+                    <p>Choose a color set to use as your profile theme</p>
+                    {% for profileColorSet in profileColorSets %}
+                    <label for="profileTheme">
+                        <input type="radio" id="profileTheme" name="profileTheme" value="{{ profileColorSet[0] }}"> {{ profileColorSet[1] }}
+                    </label>
+                    {% endfor %}
+                    <br><br>
                     <button type="submit" class="cafe-comment-button">Save</button>
                 </form>
                 {% if error %}

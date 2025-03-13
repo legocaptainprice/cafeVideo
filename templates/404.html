@@ -23,7 +23,7 @@
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
                     <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                        <img class="cafe-navbar-pfp" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture if profilePicture else 'profilepicturetest.png')) }}">
+                        <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
                     </a>
                 {% else %}
                     <!-- If user is not logged in -->

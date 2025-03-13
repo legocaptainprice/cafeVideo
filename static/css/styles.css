@@ -853,6 +853,19 @@ video {
     margin-top: 10px;
 }
 
+.cafe-profileEdit-box {
+    width: 200px;
+    border-radius: 5px;
+    color: white;
+    background: rgba(178, 122, 84, 0.75);
+    border: none;
+    height: 25px;
+}
+
+.cafe-profileEdit-box::placeholder {
+    color: white;
+}
+
 body, html {
     background-color: #8A7A5E;
     margin: 0;
