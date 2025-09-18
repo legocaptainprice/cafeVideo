@@ -19,7 +19,7 @@
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
                     <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                        <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[2] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
+                        <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[3] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
                     </a>
                 {% else %}
                     <!-- If user is not logged in -->
@@ -68,19 +68,43 @@
                 </div>
                 <div class="cafe-account-settings-user-content">
                     <h1 class="cafe-center-titles" style="color: red;">WORK IN PROGRESS</h1>
-                    {% if userAccessDisplay %}
-                    <div class="cafe-feature-gating">
-                        <p class="cafe-account-settings-title-underline">Feature Gating</p>
-                        {% for userAccess in userAccessDisplay %}
-                        <div class="cafe-feature-gating-content">
-                            <div class="cafe-feature-gating-content-text">
-                                <h3>{{ userAccess[1] }}</h3>
-                                <p>{{ userAccess[2] }}</p>
+                    <div class="cafe-account-settings-user-content-row">
+                        {% if userAccessDisplay %}
+                        <div class="cafe-account-settings-row-layout">
+                            <p class="cafe-account-settings-title-underline">Feature Gating</p>
+                            {% for userAccess in userAccessDisplay %}
+                            <div class="cafe-feature-gating-content">
+                                <div class="cafe-feature-gating-content-text">
+                                    <h3>{{ userAccess[1] }}</h3>
+                                    <p>{{ userAccess[2] }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="cafe-account-settings-row-layout profile-security-width-override">
+                            <p class="cafe-account-settings-title-underline">Profile and Security</p>
+                            <div class="cafe-account-settings-profile-security-layout">
+                                <div class="cafe-account-settings-profile-security-form">
+                                    <form action="/confirmAccountEdit" method="POST" class="cafe-modify-details">
+                                        <p>Username</p>
+                                        <input type="text" name="usernameEdit" value="{{ username }}" class="cafe-modify-details-box" required>
+                                        <p>Channel URL</p>
+                                        <input type="text" name="channelURL" value="{{ profileInfo[2] }}" class="cafe-modify-details-box" required>
+                                        <button type="submit" class="cafe-comment-button">Save Edits</button>
+                                    </form>
+                                </div>
+                                <div class="cafe-account-settings-profile-security-form">
+                                    <form action="/" method="POST" class="cafe-modify-details">
+                                        <p>Change Password</p>
+                                        <input type="text" name="password" placeholder="Enter your old password" class="cafe-modify-details-box" required>
+                                        <input type="text" name="password" placeholder="Enter your new password" class="cafe-modify-details-box" required>
+                                        <button type="submit" class="cafe-comment-button">Confirm</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
-                    {% endif %}
                 </div>
                 <form action="/" method="POST" class="cafe-login-details" enctype="multipart/form-data">
 

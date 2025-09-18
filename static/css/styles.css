@@ -554,6 +554,8 @@ video {
     height: 100px;
     border-radius: 5px;
     color: white;
+    margin-top: -64px;
+    margin-bottom: 10px;
 }
 
 .cafe-profile-showcase-bio-title {
@@ -807,6 +809,8 @@ video {
     flex-direction: row;
     height: 20px;
     align-items: center;
+    width: 100%;
+    margin-left: 10px;
 }
 
 .cafe-not-found {
@@ -903,7 +907,7 @@ video {
     line-height: 0.6;
 }
 
-.cafe-feature-gating {
+.cafe-account-settings-row-layout {
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -913,6 +917,14 @@ video {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
     width: 25%;
     border-radius: 5px;
+}
+
+.profile-security-width-override {
+    width: 41.5%;
+}
+
+.cafe-account-settings-profile-security-form {
+    margin-left: 20px;
 }
 
 .cafe-account-settings-body {
@@ -977,9 +989,43 @@ video {
     margin-left: 5px;
 }
 
+.cafe-account-settings-user-content-row {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+}
+
 .cafe-center-titles {
     text-align: center;
     width: 100%;
+}
+
+.cafe-profile-user-info {
+    display: flex;
+    flex: direction: row;
+}
+
+.cafe-account-settings-profile-security-layout {
+    display: grid;
+    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    margin-bottom: 5px;
+    margin-right: 10px;
+}
+
+.cafe-modify-details-box {
+    width: 200px;
+    border-radius: 5px;
+    color: white;
+    background: rgba(178, 122, 84, 0.75);
+    border: none;
+    height: 25px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.cafe-modify-details-box::placeholder {
+    color: white;
 }
 
 body, html {

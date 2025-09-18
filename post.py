@@ -3,9 +3,12 @@ import time
 from datetime import datetime
 import time_converter
 
+# Set the location for the database path
+cafeDatabasePath = 'cafeDatabase.db'
+
 
 def uploadVideoToDatabase(userID, title, description, videoTags, filename, thumbnailFilename):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     datetimeOfPublishedVideo = int(time.time())
@@ -27,7 +30,7 @@ def uploadVideoToDatabase(userID, title, description, videoTags, filename, thumb
 
 
 def sendCommentToDatabase(videoID, userID, comment):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()
@@ -44,7 +47,7 @@ def sendCommentToDatabase(videoID, userID, comment):
 
 
 def uploadProfilePictureToDatabase(profilePictureFilename, userID):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()
@@ -63,7 +66,7 @@ def uploadProfilePictureToDatabase(profilePictureFilename, userID):
 
 
 def uploadProfileBannerToDatabase(profileBannerFilename, userID):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()
@@ -82,7 +85,7 @@ def uploadProfileBannerToDatabase(profileBannerFilename, userID):
 
 
 def sendProfileBioToDatabase(bio, userID):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()
@@ -101,7 +104,7 @@ def sendProfileBioToDatabase(bio, userID):
 
 
 def updateProfileColorTheme(profileColorTheme, userID):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()

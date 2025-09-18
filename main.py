@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, createAccount, post, os
+import sqlite3, createAccount, post, os, modifyAccount
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -22,13 +22,23 @@ os.makedirs(cafe.config['UPLOAD_THUMBNAILS_FOLDER'], exist_ok=True)
 os.makedirs(cafe.config['UPLOAD_PROFILE_PICTURE_FOLDER'], exist_ok=True)
 os.makedirs(cafe.config['UPLOAD_PROFILE_BANNER_FOLDER'], exist_ok=True)
 
+# Set the location for the database
+cafeDatabasePath = 'cafeDatabase.db'
+
+
+# Algorithm should revolve around DB entries as well, for example a table with a bunch of tags from videos and the
+# userID of the user that's watching the video, if they keep watching videos with a video game tag then more entries
+# on the table with that userID and that tag will be entered then the server will curate their recommended feed
+# based of the most popular tags that show up for that user.
+
 
 def allowedFiletypes(filename, allowedExtensions):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowedExtensions
 
 
 def connect_to_database():
-    conn = sqlite3.connect("cafeDatabase.db")
+    # This is barely used, but it was here since early development so yeah lol
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
     conn.row_factory = sqlite3.Row
     return conn
@@ -36,7 +46,8 @@ def connect_to_database():
 
 @cafe.route('/')
 def indexPage():
-    conn = sqlite3.connect('cafeDatabase.db')
+    """The home page for cafeVideo"""
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
     cursor = conn.cursor()
     username = session.get("username")
@@ -90,13 +101,16 @@ def indexPage():
                             LIMIT 12
                         """, (userID,))
         subscription_videos = cursor.fetchall()
+        conn.close()
         return render_template('index.html', username=username, videos=videos, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo, subscription_videos=subscription_videos, featureAccess=featureAccess)
+                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
+                               subscription_videos=subscription_videos, featureAccess=featureAccess)
     else:
         profilePicture = ["profilepicturetest.png"]
-    conn.close()
-    return render_template('index.html', username=username, videos=videos, userID=userID,
-                           time_ago=time_ago, profilePicture=profilePicture)
+        conn.close()
+        return redirect(url_for('explorePage'))
+    # return render_template('index.html', username=username, videos=videos, userID=userID,
+    #                       time_ago=time_ago, profilePicture=profilePicture)
 
 
 @cafe.route('/login')
@@ -106,6 +120,8 @@ def loginPage():
 
 @cafe.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuthAPI():
+    """Handles the login authentication by checking the username and password to see if it matches a record on the
+    database"""
     if request.method == "POST":
         username = request.form['username']
         password = request.form['password']
@@ -132,10 +148,12 @@ def loginAuthAPI():
 
 @cafe.route('/registerAccount', methods=['POST'])
 def registerAccountAPI():
+    """Handles the registration process of the account by creating a new user record on the database"""
     username = request.form['username']
     password = request.form['password']
     hashed_password = generate_password_hash(password)
 
+    # Call the createAccount function and create the account with the username and hashed password
     success, message = createAccount.createAccount(username, hashed_password)
 
     if success:
@@ -147,6 +165,7 @@ def registerAccountAPI():
 
 @cafe.route('/logout')
 def logout():
+    """Logs the user out of the account and redirects them back to the home page"""
     session.pop("userID", None)
     session.pop("username", None)
     return redirect(url_for("indexPage"))
@@ -160,7 +179,7 @@ def upload():
 
     # If the user is not logged in, send them to the login page
     if username:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -233,6 +252,7 @@ def uploadVideo():
 
 @cafe.route('/watch')
 def watchPage():
+    """Function to display the watch page"""
     videoID = request.args.get('v')
     session['redirectToVideoID'] = videoID
     username = session.get('username')
@@ -240,7 +260,7 @@ def watchPage():
 
     if videoID:
         # Retrieve video details
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
         cursor.execute("""SELECT * 
@@ -358,7 +378,7 @@ def searchForVideo():
     userID = session.get("userID")
 
     if searchQuery:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -415,7 +435,7 @@ def getAccountProfile():
     userID_session = session.get("userID")
 
     if userID:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -501,7 +521,7 @@ def subscribeToUser():
         return redirect(url_for('indexPage'))
 
     if int(creatorUserID) != int(subscriberUserID):
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -536,7 +556,7 @@ def likeVideoFromCreatorID():
     userID = session["userID"]
 
     if int(creatorUserID) != int(userID):
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -573,7 +593,7 @@ def editUserProfile():
     userID = session.get("userID")
 
     if username:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -619,7 +639,8 @@ def editUserProfile():
             userAccessDisplay = False
 
         return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo,
-                               profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo, userAccessDisplay=userAccessDisplay)
+                               profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
+                               userAccessDisplay=userAccessDisplay)
     else:
         return redirect(url_for('indexPage'))
 
@@ -630,12 +651,12 @@ def getAccountSettings():
     userID = session.get("userID")
 
     if username:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
         cursor.execute("""
-                                    SELECT profilePicture, profileBanner, profileColorSets.profilePictureBorderColor 
+                                    SELECT profilePicture, profileBanner, channelURL, profileColorSets.profilePictureBorderColor 
                                     FROM profiles 
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                     WHERE userID = ?""", (userID,))
@@ -680,6 +701,26 @@ def getAccountSettings():
                                userAccessDisplay=userAccessDisplay)
     else:
         return redirect(url_for('indexPage'))
+
+
+@cafe.route('/confirmAccountEdit', methods=["POST"])
+def confirmAccountDetailsEdit():
+    if request.method == "POST":
+        try:
+            userID = session.get('userID')
+        except:
+            return redirect(url_for('indexPage'))
+        username = request.form["usernameEdit"]
+        channelURL = request.form["channelURL"]
+
+        success, message = modifyAccount.changeAccountDetailsConfirm(userID, username, channelURL)
+
+        if success:
+            session['username'] = username  # Store username in session
+            return redirect(url_for('getAccountSettings'))
+        else:
+            flash(message, 'error')
+            return redirect(url_for('getAccountSettings'))
 
 
 @cafe.route('/confirmProfileEdit', methods=["POST"])
@@ -752,7 +793,7 @@ def pageNotFound(error):
     userID = session.get('userID')
 
     if username:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -774,7 +815,7 @@ def accountSubscriptions():
     userID = session.get("userID")
 
     if username:
-        conn = sqlite3.connect('cafeDatabase.db')
+        conn = sqlite3.connect(cafeDatabasePath)
         conn.execute('PRAGMA foreign_keys = ON')
         cursor = conn.cursor()
 
@@ -817,7 +858,7 @@ def accountSubscriptions():
 
 @cafe.route('/explore')
 def explorePage():
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
     cursor = conn.cursor()
     username = session.get("username")
@@ -863,7 +904,7 @@ def explorePage():
 def lattePage():
     username = session.get("username")
     userID = session.get("userID")
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
     cursor = conn.cursor()
 

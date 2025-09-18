@@ -41,7 +41,9 @@
                     {% if username %}
                         <a href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
                     {% endif %}
-                    <a href="{{ url_for('indexPage') }}">Lattes</a>
+                    {% if username %}
+                        <a href="{{ url_for('indexPage') }}">Lattes</a>
+                    {% endif %}
                 </div>
                 {% if username %}
                     <div class="cafe-sidebar-left-title">

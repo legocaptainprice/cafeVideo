@@ -61,31 +61,33 @@
             </div>
         </div>
         <div class="cafe-video-list-body">
-            <div class="cafe-profile-list-contents-header" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
+            <div class="cafe-profile-list-contents-header" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                 <div class="cafe-profile-list-contents-header-banner">
                     <img class="cafe-profile-banner" src="{{ url_for('static', filename='profile/banner/' + (profileDetails[10] if profileDetails[10] else 'profilebannertemplate.png')) }}">
                 </div>
-                <div class="cafe-profile-list-title-unique" style="background-color: {{ profileDetails[16] or '#C78A4B' }} !important;">
-                    <p>{{ profileDetails[1] }} · {{ num_of_subscribers }} subscriber{{'s' if num_of_subscribers > 1 }}</p>
-                    {% if profileDetails[0] == userID %}
-                        <a href="/editProfile" class="cafe-profile-list-settings" style="background-color: {{ profileDetails[16] or '#C78A4B' }} !important;">Settings</a>
-                    {% endif %}
-                    {% if username %}
-                        {% if profileDetails[0] != userID %}
-                            {% if isSubscribedToChannel %}
-                                <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe">Subscribed</a>
-                            {% else %}
-                                <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe">Subscribe</a>
+                <div class="cafe-profile-user-info">
+                    <div class="cafe-profile-picture-showcase" style="border-color: {{ profileDetails[19] or profileDetails[17] or '#C78A4B' }} !important;">
+                        <img class="cafe-profile-picture-showcase-image" src="{{ url_for('static', filename='profile/pfp/' + (profileDetails[9] if profileDetails[9] else 'profilepicturetest.png')) }}">
+                    </div>
+                    <div class="cafe-profile-list-title-unique" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
+                        <p>{{ profileDetails[1] }} · {{ num_of_subscribers }} subscriber{{'s' if num_of_subscribers > 1 }}</p>
+                        {% if profileDetails[0] == userID %}
+                            <a href="/editProfile" class="cafe-profile-list-settings" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">Settings</a>
+                        {% endif %}
+                        {% if username %}
+                            {% if profileDetails[0] != userID %}
+                                {% if isSubscribedToChannel %}
+                                    <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe">Subscribed</a>
+                                {% else %}
+                                    <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe">Subscribe</a>
+                                {% endif %}
                             {% endif %}
                         {% endif %}
-                    {% endif %}
+                    </div>
                 </div>
                 <!-- <p class="cafe-profile-list-title">{{ profileDetails[1] }}'s Profile</p> -->
                 <div class="cafe-profile-showcases-row">
-                    <div class="cafe-profile-picture-showcase" style="border-color: {{ profileDetails[17] or profileDetails[15] or '#C78A4B' }} !important;">
-                        <img class="cafe-profile-picture-showcase-image" src="{{ url_for('static', filename='profile/pfp/' + (profileDetails[9] if profileDetails[9] else 'profilepicturetest.png')) }}">
-                    </div>
-                    <div class="cafe-profile-showcase-small" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
+                    <div class="cafe-profile-showcase-small" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                         <div class="cafe-profile-showcase-bio-title-layout">
                             <p class="cafe-profile-showcase-bio-title">
                                 Bio
@@ -95,7 +97,7 @@
                             <p>{{ profileDetails[8] }}</p>
                         </div>
                     </div>
-                    <div class="cafe-profile-showcase-small" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
+                    <div class="cafe-profile-showcase-small" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                         <div class="cafe-profile-showcase-bio-title-layout">
                             <p class="cafe-profile-showcase-bio-title">
                                 Join Date
@@ -107,15 +109,15 @@
                     </div>
                 </div>
             </div>
-            <div class="cafe-profile-list-contents-videos" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
-                <p class="cafe-profile-list-title" style="background-color: {{ profileDetails[16] or '#C78A4B' }} !important;">{{ profileDetails[1] }}'s Videos</p>
+            <div class="cafe-profile-list-contents-videos" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
+                <p class="cafe-profile-list-title" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">{{ profileDetails[1] }}'s Videos</p>
                 <div class="cafe-video-posts-row">
                     <!-- Videos go in this element -->
                     {% for video in videos %}
                     <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
-                        <div class="cafe-video-post-container cafe-video-post-container-margin-bottom" style="border-color: {{ profileDetails[15] or '#C78A4B' }} !important;">
+                        <div class="cafe-video-post-container cafe-video-post-container-margin-bottom" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                             <div class="cafe-video-post-thumbnail">
-                                <div class="cafe-video-post-thumbnail-border">
+                                <div class="cafe-video-post-thumbnail-border" style="border-color: {{ profileDetails[19] or '#C78A4B' }} !important;">
                                     <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + video[4]) }}">
                                 </div>
                             </div>

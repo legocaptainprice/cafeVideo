@@ -1,9 +1,12 @@
 import sqlite3
 from datetime import datetime
 
+# Set the location for database path
+cafeDatabasePath = 'cafeDatabase.db'
+
 
 def createAccount(username, hashed_password):
-    conn = sqlite3.connect('cafeDatabase.db')
+    conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
 
     cursor = conn.cursor()
@@ -15,7 +18,7 @@ def createAccount(username, hashed_password):
         userID = cursor.fetchone()
         joinDate = datetime.today()
         formatted_joinDate = joinDate.strftime("%d/%m/%Y")
-        cursor.execute("INSERT INTO profiles (userID, joinDate, profileColorTheme) VALUES (?, ?, ?)", (userID[0], formatted_joinDate, 5))
+        cursor.execute("INSERT INTO profiles (userID, joinDate, profileColorTheme, channelURLEnabled, channelURL) VALUES (?, ?, ?, ?, ?)", (userID[0], formatted_joinDate, 5, 0, username))
         conn.commit()
         print("Account created")
         return True, "Account created successfully!" # Return success message
