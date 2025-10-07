@@ -77,9 +77,9 @@
                         {% if username %}
                             {% if profileDetails[0] != userID %}
                                 {% if isSubscribedToChannel %}
-                                    <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe">Subscribed</a>
+                                    <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">Subscribed</a>
                                 {% else %}
-                                    <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe">Subscribe</a>
+                                    <a href="/subscribeUser?creatorID={{ channelID }}" class="cafe-profile-list-subscribe" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">Subscribe</a>
                                 {% endif %}
                             {% endif %}
                         {% endif %}

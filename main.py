@@ -55,7 +55,9 @@ def indexPage():
 
     # Fetch the latest videos for the new videos feed
     cursor.execute("""
-            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
+            videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
+            profiles.channelURLEnabled, profiles.channelURL
             FROM videos
             JOIN accounts ON videos.userID = accounts.userID
             JOIN profiles ON profiles.userID = accounts.userID
@@ -66,7 +68,8 @@ def indexPage():
 
     if username:
         cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
+                                channelURL
                                 FROM profiles 
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE userID = ?""", (userID,))
@@ -79,9 +82,13 @@ def indexPage():
                           WHERE accounts.userID = ?  
                         """, (userID,))
         featureAccess = cursor.fetchall()
-        print(featureAccess[0][0])
+        try:
+            print(featureAccess[0][0])
+        except:
+            pass
         cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, accounts.username
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
+                                accounts.username, channelURLEnabled, channelURL
                                 FROM profiles
                                 JOIN accounts ON profiles.userID = accounts.userID
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
@@ -90,7 +97,9 @@ def indexPage():
         subscriptionsInfo = cursor.fetchall()
         # Fetch the latest videos for the subscriptions feed
         cursor.execute("""
-                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                            videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                            profileColorSets.profilePictureBorderColor, profiles.channelURLEnabled, profiles.channelURL
                             FROM videos
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
@@ -184,13 +193,15 @@ def upload():
         cursor = conn.cursor()
 
         cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor 
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
+                                channelURL 
                                 FROM profiles 
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE userID = ?""", (userID,))
         profilePicture = cursor.fetchone()
         cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, accounts.username
+                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
+                                        accounts.userID, accounts.username, channelURLEnabled, channelURL
                                         FROM profiles
                                         JOIN accounts ON profiles.userID = accounts.userID
                                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
@@ -270,6 +281,8 @@ def watchPage():
                                 WHERE videoID = ?""", (videoID,))
         video = cursor.fetchone()
 
+        print(video)
+
         if video:
             # If there is a video go to the video
             # Fetch the latest videos for the new videos feed
@@ -330,7 +343,8 @@ def watchPage():
 
             if username:
                 cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
+                                        channelURLEnabled, channelURL
                                         FROM profiles 
                                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                         WHERE userID = ?""", (userID,))
@@ -509,6 +523,34 @@ def getAccountProfile():
         return redirect(url_for("indexPage"))
 
 
+@cafe.route('/<channelURL>')
+def redirectPage(channelURL):
+    """The profile of the user by their channel URL"""
+    viewerUserID = session.get('userID')
+    viewerUsername = session.get("username")
+    conn = sqlite3.connect(cafeDatabasePath)
+    conn.execute('PRAGMA foreign_keys = ON')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT channelURLEnabled FROM profiles WHERE channelURL = ?", (channelURL,))
+    channelURLEnabled = cursor.fetchone()
+
+    try:
+        if channelURLEnabled[0] == 1:
+            cursor.execute("SELECT userID FROM profiles WHERE channelURL = ?", (channelURL,))
+            userID = cursor.fetchone()
+            userID = userID[0]
+            print(userID)
+            with cafe.test_request_context(f'channel?id={userID}'):
+                session["username"] = viewerUsername
+                session["userID"] = viewerUserID
+                return getAccountProfile()
+        else:
+            return abort(404)
+    except:
+        return abort(404)
+
+
 @cafe.route('/subscribeUser')
 def subscribeToUser():
     if "userID" not in session:
@@ -604,6 +646,8 @@ def editUserProfile():
                                 WHERE userID = ?""", (userID,))
         profileInfo = cursor.fetchone()
 
+        # Need to also add a way to have some hidden themes only available for certain events
+        # This can be done by adding a hidden column to the profileColorSets table
         cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
         profileColorSets = cursor.fetchall()
 
@@ -866,7 +910,9 @@ def explorePage():
 
     # Fetch the latest videos for the new videos feed
     cursor.execute("""
-                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
+                videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
+                profiles.channelURLEnabled, profiles.channelURL
                 FROM videos
                 JOIN accounts ON videos.userID = accounts.userID
                 JOIN profiles ON profiles.userID = accounts.userID
@@ -877,13 +923,15 @@ def explorePage():
 
     if username:
         cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
+                                    channelURLEnabled, channelURL
                                     FROM profiles 
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                     WHERE userID = ?""", (userID,))
         profilePicture = cursor.fetchone()
         cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, accounts.username
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
+                                    accounts.username, channelURLEnabled, channelURL
                                     FROM profiles
                                     JOIN accounts ON profiles.userID = accounts.userID
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
@@ -910,7 +958,9 @@ def lattePage():
 
     # Fetch the latest videos for the new videos feed
     cursor.execute("""
-                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
+                    videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
+                    profiles.channelURLEnabled, profiles.channelURL
                     FROM videos
                     JOIN accounts ON videos.userID = accounts.userID
                     JOIN profiles ON profiles.userID = accounts.userID
@@ -920,13 +970,15 @@ def lattePage():
     lattes = cursor.fetchall()  # List of tuples
 
     cursor.execute("""
-                            SELECT profilePicture, profileColorSets.profilePictureBorderColor
+                            SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
+                            channelURL
                             FROM profiles 
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             WHERE userID = ?""", (userID,))
     profilePicture = cursor.fetchone()
     cursor.execute("""
-                            SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, accounts.username
+                            SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
+                            accounts.username, channelURLEnabled, channelURL
                             FROM profiles
                             JOIN accounts ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
