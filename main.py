@@ -310,14 +310,18 @@ def watchPage():
                         """)
             videos = cursor.fetchall()  # List of tuples
             cursor.execute("""
-                            SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                            SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, 
+                            profileColorSets.profilePictureBorderColor, comments.userID, 
+                            COUNT(likedComments.commentID) AS likeCount, SUM(likedComments.userID = ?) AS isLikedByUser
                             FROM comments
                             JOIN accounts ON comments.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            WHERE videoID = ? 
-                            ORDER BY commentID DESC 
-                        """, (videoID,))
+                            LEFT JOIN likedComments ON likedComments.commentID = comments.commentID
+                            WHERE comments.videoID = ? 
+                            GROUP BY comments.commentID
+                            ORDER BY comments.commentID DESC 
+                        """, (session.get("userID"), videoID))
             comments = cursor.fetchall()
             print(comments)
 
@@ -374,6 +378,20 @@ def sendComment():
         comment = request.form["postComment"]
 
         post.sendCommentToDatabase(videoID, userID, comment)
+
+        return redirect(f'/watch?v={videoID}')
+
+
+@cafe.route('/postReply', methods=["POST"])
+def sendReply():
+    if request.method == "POST":
+        userID = session.get("userID")
+        videoID = session.get("redirectToVideoID")
+        commentID = session.get("replyToCommentID")
+
+        reply = request.form["postReply"]
+
+        post.sendReplyToDatabase(commentID, userID, reply)
 
         return redirect(f'/watch?v={videoID}')
 
@@ -631,6 +649,90 @@ def likeVideoFromCreatorID():
                 return redirect(request.referrer)
         else:
             return redirect(url_for("indexPage"))
+    else:
+        return redirect(request.referrer)
+
+
+@cafe.route('/likeComment')
+def likeCommentFromCommenterID():
+    if "userID" not in session:
+        return redirect(url_for('loginPage'))
+
+    commentID = request.args.get('commentID')
+    commenterID = request.args.get('commenterID')
+    userID = session['userID']
+
+    if int(commenterID) != int(userID):
+        conn = sqlite3.connect(cafeDatabasePath)
+        conn.execute('PRAGMA foreign_keys = ON')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM comments WHERE commentID = ?", (commentID,))
+        commentExists = cursor.fetchone()
+        if commentExists:
+
+            cursor.execute("SELECT * FROM likedComments WHERE commentID = ? AND commenterID = ? AND userID = ?",
+                           (commentID, commenterID, userID))
+            isLikedComment = cursor.fetchone()
+
+            if isLikedComment:
+                cursor.execute("DELETE FROM likedComments WHERE commentID = ? AND commenterID = ? AND userID = ?",
+                               (commentID, commenterID, userID))
+                conn.commit()
+                print("User has unliked the comment")
+                conn.close()
+                return redirect(request.referrer)
+            else:
+                cursor.execute("INSERT INTO likedComments (commentID, commenterID, userID) VALUES (?, ?, ?)",
+                               (commentID, commenterID, userID))
+                conn.commit()
+                print("User has liked the comment")
+                conn.close()
+                return redirect(request.referrer)
+        else:
+            return redirect(url_for('indexPage'))
+    else:
+        return redirect(request.referrer)
+
+
+@cafe.route('/likeReply')
+def likeReplyFromReplierID():
+    if "userID" not in session:
+        return redirect(url_for('loginPage'))
+
+    replyID = session.get("replyID")
+    replierID = session.get("replierID")
+    userID = session["userID"]
+
+    if int(replierID) != int(userID):
+        conn = sqlite3.connect(cafeDatabasePath)
+        conn.execute('PRAGMA foreign_keys = ON')
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM replies WHERE replyID = ?", (replyID,))
+        replyExists = cursor.fetchone()
+
+        if replyExists:
+            cursor.execute("SELECT * FROM likedReplies WHERE replyID = ? AND replierID = ? AND userID = ?",
+                           (replyID, replierID, userID))
+            isLikedReply = cursor.fetchone()
+
+            if isLikedReply:
+                cursor.execute("DELETE FROM likedReplies WHERE replyID = ? AND replierID = ? AND userID = ?",
+                               (replyID, replierID, userID))
+                conn.commit()
+                print("User has unliked the reply")
+                conn.close()
+                return redirect(request.referrer)
+            else:
+                cursor.execute("INSERT INTO likedReplies (replyID, replierID, userID) VALUES (?, ?, ?)",
+                               (replyID, replierID, userID))
+                conn.commit()
+                print("User has liked the reply")
+                conn.close()
+                return redirect(request.referrer)
+        else:
+            return redirect(url_for('indexPage'))
     else:
         return redirect(request.referrer)
 

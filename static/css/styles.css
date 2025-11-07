@@ -391,6 +391,28 @@ video {
     display: flex;
     flex-direction: row;
     margin-left: 10px;
+    width: 90%;
+}
+
+.cafe-comment-likes {
+    display: flex;
+    flex-direction: row;
+    margin-right: 10px;
+    border: 2px solid #C78A4B;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    margin-bottom: 10px;
+
+}
+
+.cafe-comment-likes-gap {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: 95px;
+}
+
+.cafe-comment-like-button {
+    margin-top: 15px;
 }
 
 .cafe-post-comment {
@@ -1025,6 +1047,13 @@ video {
 
 .cafe-modify-details-box::placeholder {
     color: white;
+}
+
+.cafe-comment-details-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
 }
 
 body, html {

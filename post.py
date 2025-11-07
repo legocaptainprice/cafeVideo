@@ -46,6 +46,24 @@ def sendCommentToDatabase(videoID, userID, comment):
         conn.close()
 
 
+def sendReplyToDatabase(commentID, userID, reply):
+    conn = sqlite3.connect(cafeDatabasePath)
+    conn.execute('PRAGMA foreign_keys = ON')
+
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("INSERT INTO replies (commentID, userID, reply) VALUES (?, ?, ?)",
+                       (commentID, userID, reply))
+        conn.commit()
+        print("Reply sent")
+    except sqlite3.IntegrityError:
+        print("Error with posting reply")
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def uploadProfilePictureToDatabase(profilePictureFilename, userID):
     conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')

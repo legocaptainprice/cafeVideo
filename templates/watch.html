@@ -158,8 +158,24 @@
                             <img class="cafe-comment-pfp" style="border-color: {{ comment[4] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (comment[3] if comment[3] else 'profilepicturetest.png')) }}">
                             <h3>{{ comment[1] }}</h3>
                         </div>
-                        <div class="cafe-comment-details">
-                            <p>{{ comment[2] }}</p>
+                        <div class="cafe-comment-details-layout">
+                            <div class="cafe-comment-details">
+                                <p>{{ comment[2] }}</p>
+                            </div>
+                            <div class="cafe-comment-likes">
+                                <p class="cafe-comment-likes-gap">{{ comment[6] }} Likes</p>
+                                <div class="cafe-watch-video-stats-vertical-divider"></div>
+                                <div class="cafe-comment-like-button">
+                                    <!-- This needs to be likeCommentFromCommenterID -->
+                                    <a class="cafe-hide-link-tag" href="{{ url_for('likeCommentFromCommenterID', commentID=comment[0], commenterID=comment[5]) }}">
+                                        {% if comment[7] == 1 %}
+                                            <button class="cafe-comment-button-liked">Liked</button>
+                                        {% else %}
+                                            <button class="cafe-comment-button">Like</button>
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
