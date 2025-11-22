@@ -609,7 +609,7 @@ def getAccountProfile():
                                                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                                         WHERE notificationRecipientID = ?
                                                     """,
-                               (userID,))
+                               (userID_session,))
                 notifications = cursor.fetchall()
                 return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
                                        userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
