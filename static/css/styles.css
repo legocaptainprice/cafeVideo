@@ -21,10 +21,6 @@
     transition: background 0.3s;
 }
 
-.cafe-header-navbar a:hover {
-    background-color: rgba(0,0,0,0.1) /* Muted orange for hover */
-}
-
 .cafe-header-navbar-container {
     display: flex;
     align-items: center;
@@ -860,18 +856,23 @@ video {
 }
 
 .cafe-navbar-upload-button {
+    height: 14px !important;
+    width: 0.5px !important;
     background-color: #C78A4B;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    width: 1px !important;
-    height: 15px !important;
+    background-color: rgba(0,0,0,0);
+}
+
+.cafe-hover-element:hover {
+    background-color: rgba(0,0,0,0.1)
 }
 
 .cafe-navbar-upload-button-img {
     background-color: rgba(0,0,0,0);
     margin-left: -11px;
-    width: 25px;
-    height: 25px;
+    width: 22px;
+    height: 22px;
 }
 
 .cafe-navbar-pfp {
@@ -1073,14 +1074,12 @@ video {
     height: 36px;
     width: 41px;
     border-radius: 5px;
-    background-color: #C78A4B;
+    background-color: rgba(0,0,0,0);
     opacity: 1.0;
     margin-right: 5px;
-}
-
-.cafe-navbar-notifications-button:hover {
-    background-color: orange;
-    opacity: 0.6;
+    color: white;
+    margin: 0;
+    border: none;
 }
 
 .cafe-notifications-box {

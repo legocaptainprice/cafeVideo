@@ -20,10 +20,10 @@
             <!-- If the user is logged in, show username and logout button -->
             <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
                 {% if username %}
-                    <button id="notificationButton" class="cafe-navbar-notifications-button">
+                    <button id="notificationButton" class="cafe-navbar-notifications-button cafe-hover-element">
                         N
                     </button>
-                    <a class="cafe-navbar-upload-button" href="{{ url_for('upload') }}">
+                    <a class="cafe-navbar-upload-button cafe-hover-element" href="{{ url_for('upload') }}">
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
                     {% if profilePicture[2] == 0 %}
@@ -76,9 +76,12 @@
                     {% if username %}
                         <a href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
                     {% endif %}
-                    {% if username %}
-                        <a href="{{ url_for('indexPage') }}">Lattes</a>
-                    {% endif %}
+                    <a href="{{ url_for('indexPage') }}">cafeCorners</a>
+                    <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Your account</p>
+                    <a href="{{ url_for('indexPage') }}">Watch History</a>
+                    <a href="{{ url_for('indexPage') }}">Playlists</a>
+                    <a href="{{ url_for('indexPage') }}">Liked videos</a>
+                    <a href="{{ url_for('indexPage') }}">Bookmarks</a>
                 </div>
                 {% if username %}
                     <div class="cafe-sidebar-left-title">

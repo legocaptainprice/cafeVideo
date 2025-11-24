@@ -16,10 +16,10 @@
             </form>
             <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
                 {% if username %}
-                    <button id="notificationButton" class="cafe-navbar-notifications-button">
+                    <button id="notificationButton" class="cafe-navbar-notifications-button cafe-hover-element">
                         N
                     </button>
-                    <a class="cafe-navbar-upload-button" href="{{ url_for('upload') }}">
+                    <a class="cafe-navbar-upload-button cafe-hover-element" href="{{ url_for('upload') }}">
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
                     {% if profilePicture[2] == 0 %}
