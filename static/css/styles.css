@@ -112,6 +112,12 @@
     padding: 10px;
 }
 
+.cafe-video-list-contents-liked-videos {
+    background-color: rgba(72, 82, 112, 0);
+    border-radius: 5px;
+    padding: 10px;
+}
+
 .cafe-video-list-contents-search {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;

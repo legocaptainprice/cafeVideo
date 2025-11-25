@@ -125,11 +125,11 @@ def indexPage():
                         """, (userID,))
         subscription_videos = cursor.fetchall()
         cursor.execute("""
-                                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                                FROM notifications
-                                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                                WHERE notificationRecipientID = ?
+                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
+                                FROM notifications
+                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE notificationRecipientID = ?
                                             """,
                        (userID,))
         notifications = cursor.fetchall()
@@ -405,7 +405,7 @@ def watchPage():
                                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                         WHERE notificationRecipientID = ?
                                     """,
-                            (userID,))
+                               (userID,))
                 notifications = cursor.fetchall()
                 print(notifications)
             else:
@@ -1300,6 +1300,68 @@ def lattePage():
                 return abort(404)
     else:
         return abort(404)
+
+
+@cafe.route("/likes/videos")
+def likedVideosPage():
+    username = session.get("username")
+    userID = session.get("userID")
+
+    if username:
+        conn = sqlite3.connect(cafeDatabasePath)
+        conn.execute('PRAGMA foreign_keys = ON')
+        cursor = conn.cursor()
+
+        # Fetch the latest videos for the liked videos section
+        cursor.execute("""
+                        SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                        videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                        profileColorSets.profilePictureBorderColor
+                        FROM videos
+                        JOIN accounts ON videos.userID = accounts.userID
+                        JOIN profiles ON profiles.userID = accounts.userID
+                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                        JOIN likedVideos ON likedVideos.videoID = videos.videoID
+                        WHERE likedVideos.userID = ?
+                        ORDER BY videos.videoID DESC  -- Shows newest first
+                    """, (userID,))
+        videos = cursor.fetchall()  # List of tuples
+
+        cursor.execute("""
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
+                                    channelURL
+                                    FROM profiles 
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    WHERE userID = ?""", (userID,))
+        profilePicture = cursor.fetchone()
+
+        cursor.execute("""
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
+                                    accounts.username, channelURLEnabled, channelURL
+                                    FROM profiles
+                                    JOIN accounts ON profiles.userID = accounts.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
+                                    WHERE subscriptions.userID = ?""",
+                       (userID,))
+        subscriptionsInfo = cursor.fetchall()
+
+        cursor.execute("""
+                                    SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
+                                    FROM notifications
+                                    JOIN profiles ON notifications.notificationSenderID = profiles.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    WHERE notificationRecipientID = ?
+                                                """,
+                       (userID,))
+        notifications = cursor.fetchall()
+
+        conn.close()
+        return render_template('liked_videos.html', username=username, videos=videos, userID=userID,
+                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
+                               notifications=notifications)
+    else:
+        return redirect(url_for('indexPage'))
 
 
 cafe.run("192.168.1.114", 5000, debug=True)

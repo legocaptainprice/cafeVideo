@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <title>cafeVideo - Account Settings</title>
+    <title>cafeVideo - Liked Videos</title>
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 </head>
 <body>
@@ -11,9 +12,12 @@
         <div class="cafe-header-navbar-container">
             <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
             <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
+
             <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
                 <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
             </form>
+
+            <!-- If the user is logged in, show username and logout button -->
             <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
                 {% if username %}
                     <button id="notificationButton" class="cafe-navbar-notifications-button cafe-hover-element">
@@ -22,13 +26,13 @@
                     <a class="cafe-navbar-upload-button cafe-hover-element" href="{{ url_for('upload') }}">
                         <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
                     </a>
-                    {% if profileInfo[3] == 0 %}
+                    {% if profilePicture[2] == 0 %}
                         <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                            <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[3] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
+                            <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
                         </a>
                     {% else %}
-                        <a class="cafe-profile-link" href="{{ profileInfo[2] }}">
-                            <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[3] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
+                        <a class="cafe-profile-link" href="../{{ profilePicture[3] }}">
+                            <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
                         </a>
                     {% endif %}
                 {% else %}
@@ -78,9 +82,6 @@
                     <a href="{{ url_for('indexPage') }}">Playlists</a>
                     <a href="{{ url_for('likedVideosPage') }}">Liked videos</a>
                     <a href="{{ url_for('indexPage') }}">Bookmarks</a>
-                    <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Account Settings</p>
-                    <a href="{{ url_for('editUserProfile') }}">Profile</a>
-                    <a href="{{ url_for('logout') }}">Logout</a>
                 </div>
                 {% if username %}
                     <div class="cafe-sidebar-left-title">
@@ -90,14 +91,14 @@
                     <div class="cafe-sidebar-subscriptions-contents">
                         {% for subscription in subscriptionsInfo %}
                             {% if subscription[4] == 0 %}
-                                <a class="account-link" href="{{ url_for('getAccountProfile', id=subscription[2]) }}">
+                                <a class="account-link" href="../{{ url_for('getAccountProfile', id=subscription[2]) }}">
                                     <div class="cafe-sidebar-subscriptions-channel">
                                         <img class="cafe-sidebar-subscriptions-profile-picture" style="border-color: {{ subscription[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (subscription[0] if subscription[0] else 'profilepicturetest.png')) }}">
                                         <p class="cafe-sidebar-subscriptions-username">{{ subscription[3] }}</p>
                                     </div>
                                 </a>
                             {% else %}
-                                <a class="account-link" href="{{ subscription[5] }}">
+                                <a class="account-link" href="../{{ subscription[5] }}">
                                     <div class="cafe-sidebar-subscriptions-channel">
                                         <img class="cafe-sidebar-subscriptions-profile-picture" style="border-color: {{ subscription[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (subscription[0] if subscription[0] else 'profilepicturetest.png')) }}">
                                         <p class="cafe-sidebar-subscriptions-username">{{ subscription[3] }}</p>
@@ -110,58 +111,40 @@
             </div>
         </div>
         <div class="cafe-video-list-body">
-            <div class="cafe-account-settings-body">
-                <div class="cafe-account-settings-user-details">
-                    <img class="cafe-profile-picture-showcase-image cafe-box-shadow-other" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
-                    <h1>{{ username }} - Account Settings</h1>
-                </div>
-                <div class="cafe-account-settings-user-content">
-                    <h1 class="cafe-center-titles" style="color: red;">WORK IN PROGRESS</h1>
-                    <div class="cafe-account-settings-user-content-row">
-                        {% if userAccessDisplay %}
-                        <div class="cafe-account-settings-row-layout">
-                            <p class="cafe-account-settings-title-underline">Feature Gating</p>
-                            {% for userAccess in userAccessDisplay %}
-                            <div class="cafe-feature-gating-content">
-                                <div class="cafe-feature-gating-content-text">
-                                    <h3>{{ userAccess[1] }}</h3>
-                                    <p>{{ userAccess[2] }}</p>
+            {% if username %}
+                <div class="cafe-video-list-contents-liked-videos">
+                    <p class="cafe-video-list-title">Liked Videos</p>
+                    <div class="cafe-video-posts-row">
+                        {% for video in videos %}
+                        <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
+                            <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
+                                <div class="cafe-video-post-thumbnail">
+                                    <div class="cafe-video-post-thumbnail-border">
+                                        <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + (video[4] if video[4] else 'videotemplate.png')) }}">
+                                    </div>
+                                </div>
+                                <div class="cafe-align-video-post-details">
+                                    <div class="cafe-video-post-profile-picture" style="border-color: {{ video[7] or '#C78A4B' }} !important;">
+                                        <img class="cafe-video-post-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (video[6] if video[6] else 'profilepicturetest.png')) }}">
+                                    </div>
+                                    <div class="cafe-video-post-details">
+                                        <div class="cafe-video-post-title">
+                                            <p>{{ video[2] }}</p>  <!-- Video Title -->
+                                        </div>
+                                        <div class="cafe-video-post-channel">
+                                            <p>{{ video[1] }}</p>  <!-- Uploader Username -->
+                                        </div>
+                                        <div class="cafe-video-post-views">
+                                            <p>{{ video[3] }} views · {{ time_ago(video[5]) }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <div class="cafe-account-settings-row-layout profile-security-width-override">
-                            <p class="cafe-account-settings-title-underline">Profile and Security</p>
-                            <div class="cafe-account-settings-profile-security-layout">
-                                <div class="cafe-account-settings-profile-security-form">
-                                    <form action="/confirmAccountEdit" method="POST" class="cafe-modify-details">
-                                        <p>Username</p>
-                                        <input type="text" name="usernameEdit" value="{{ username }}" class="cafe-modify-details-box" required>
-                                        <p>Channel URL</p>
-                                        <input type="text" name="channelURL" value="{{ profileInfo[2] }}" class="cafe-modify-details-box" required>
-                                        <button type="submit" class="cafe-comment-button">Save Edits</button>
-                                    </form>
-                                </div>
-                                <div class="cafe-account-settings-profile-security-form">
-                                    <form action="/" method="POST" class="cafe-modify-details">
-                                        <p>Change Password</p>
-                                        <input type="text" name="password" placeholder="Enter your old password" class="cafe-modify-details-box" required>
-                                        <input type="text" name="password" placeholder="Enter your new password" class="cafe-modify-details-box" required>
-                                        <button type="submit" class="cafe-comment-button">Confirm</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+                        </a>
+                        {% endfor %}
                     </div>
                 </div>
-                <form action="/" method="POST" class="cafe-login-details" enctype="multipart/form-data">
-
-                </form>
-                {% if error %}
-                    <p style="color: red">{{error}}</p>
-                {% endif %}
-            </div>
+            {% endif %}
         </div>
     </div>
     <!-- Rename to cafeChannels -->
