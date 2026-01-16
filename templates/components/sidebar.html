@@ -6,13 +6,13 @@
             {% if username %}
                 <a href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
             {% endif %}
-            {% if username %}
+            <!-- {% if username %}
                 {% for feature in featureAccess %}
                     {% if feature[0] == 1 %}
                         <a href="{{ url_for('lattePage') }}">Lattes</a>
                     {% endif %}
                 {% endfor %}
-            {% endif %}
+            {% endif %} -->
             <a href="{{ url_for('indexPage') }}">cafeCorners</a>
             <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Your account</p>
             <a href="{{ url_for('watchHistory') }}">Watch History</a>

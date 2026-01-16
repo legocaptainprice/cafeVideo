@@ -38,31 +38,7 @@
             </div>
         </div>
     </div>
-    <div id="cafeNotificationsPanel" class="cafe-notifications-box hidden">
-        <div class="cafe-notifications-box-layout">
-            <div class="cafe-notifications-box-header">
-                <div class="cafe-notifications-box-header-title">
-                    <h3>Notifications</h3>
-                </div>
-            </div>
-            <div class="cafe-notifications-box-body">
-                {% for notification in notifications %}
-                    <div class="cafe-notifications-box-body-item">
-                        <div class="cafe-notifications-box-body-profile-details">
-                            <!-- Creator profile picture for testing -->
-                            <div class="cafe-watch-creator-profile-picture" style="border-color: {{ notification[10] or '#C78A4B' }} !important;">
-                                <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (notification[9] if notification[9] else 'profilepicturetest.png')) }}">
-                            </div>
-                        </div>
-                        <div class="cafe-notifications-box-body-item-details">
-                            <p style="font-weight: bold;" class="cafe-notifications-item-title">{{ notification[3] }}</p>
-                            <p style="font-size: 12px;" class="cafe-notifications-item-description">{{ notification[4] }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+    {% include "components/notificationsPanel.html" %}
     <div class="cafe-main-body">
         <div class="cafe-sidebar-left">
             <div class="cafe-sidebar-left-contents">

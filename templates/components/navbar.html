@@ -3,8 +3,9 @@
             <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
             <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
 
+
             <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
-                <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
+                <input type="text" name="search" placeholder="{{ searchQuery | default('Search for a video', true) }}" class="cafe-search-box" required>
             </form>
 
             <!-- If the user is logged in, show username and logout button -->

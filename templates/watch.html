@@ -7,62 +7,8 @@
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 </head>
 <body>
-    <div class="cafe-header-navbar">
-        <div class="cafe-header-navbar-container">
-            <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
-            <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
-            <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
-                <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
-            </form>
-            <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
-                {% if username %}
-                    <button id="notificationButton" class="cafe-navbar-notifications-button cafe-hover-element">
-                        N
-                    </button>
-                    <a class="cafe-navbar-upload-button cafe-hover-element" href="{{ url_for('upload') }}">
-                        <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
-                    </a>
-                    {% if profilePicture[2] == 0 %}
-                        <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                            <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
-                        </a>
-                    {% else %}
-                        <a class="cafe-profile-link" href="{{ profilePicture[3] }}">
-                            <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
-                        </a>
-                    {% endif %}
-                {% else %}
-                    <!-- If user is not logged in -->
-                    <a href="{{ url_for('loginPage') }}">Login</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div id="cafeNotificationsPanel" class="cafe-notifications-box hidden">
-        <div class="cafe-notifications-box-layout">
-            <div class="cafe-notifications-box-header">
-                <div class="cafe-notifications-box-header-title">
-                    <h3>Notifications</h3>
-                </div>
-            </div>
-            <div class="cafe-notifications-box-body">
-                {% for notification in notifications %}
-                    <div class="cafe-notifications-box-body-item">
-                        <div class="cafe-notifications-box-body-profile-details">
-                            <!-- Creator profile picture for testing -->
-                            <div class="cafe-watch-creator-profile-picture" style="border-color: {{ notification[10] or '#C78A4B' }} !important;">
-                                <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (notification[9] if notification[9] else 'profilepicturetest.png')) }}">
-                            </div>
-                        </div>
-                        <div class="cafe-notifications-box-body-item-details">
-                            <p style="font-weight: bold;" class="cafe-notifications-item-title">{{ notification[3] }}</p>
-                            <p style="font-size: 12px;" class="cafe-notifications-item-description">{{ notification[4] }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
     <div class="cafe-main-body">
         <div class="cafe-watch-layout-body">
             <div class="cafe-video-content">
