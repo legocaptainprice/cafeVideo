@@ -661,7 +661,7 @@ def redirectPage(channelURL):
         return abort(404)
 
 
-@cafe.route('/subscribeUser')
+@cafe.route('/subscribeUser', methods=["POST"])
 def subscribeToUser():
     if "userID" not in session:
         return redirect(url_for('loginPage'))
@@ -709,7 +709,7 @@ def subscribeToUser():
         return redirect(request.referrer)
 
 
-@cafe.route('/likeVideo')
+@cafe.route('/likeVideo', methods=["POST"])
 def likeVideoFromCreatorID():
     if "userID" not in session:
         return redirect(url_for('loginPage'))
@@ -760,7 +760,7 @@ def likeVideoFromCreatorID():
         return redirect(request.referrer)
 
 
-@cafe.route('/likeComment')
+@cafe.route('/likeComment', methods=["POST"])
 def likeCommentFromCommenterID():
     if "userID" not in session:
         return redirect(url_for('loginPage'))

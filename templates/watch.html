@@ -62,22 +62,20 @@
                                     {% if creatorUserID != userID %}
                                     <div class="cafe-watch-subscribe">
                                         <div class="cafe-watch-subscribe-button">
-                                            <a class="cafe-hide-link-tag" href="{{ url_for('subscribeToUser', creatorID=creatorUserID) }}">
-                                                {% if isSubscribedToChannel %}
-                                                    <button class="cafe-comment-button">Subscribed</button>
-                                                {% else %}
-                                                    <button class="cafe-comment-button">Subscribe</button>
-                                                {% endif %}
-                                            </a>
+                                            <button
+                                                    id="subscribeButton"
+                                                    class="cafe-comment-button"
+                                                    data-url="{{ url_for('subscribeToUser', creatorID=creatorUserID) }}">
+                                                    {{ 'Subscribed' if isSubscribedToChannel else 'Subscribe' }}
+                                            </button>
                                         </div>
                                         <div class="cafe-watch-like-button">
-                                            <a class="cafe-hide-link-tag" href="{{ url_for('likeVideoFromCreatorID', videoID=video[0], creatorID=creatorUserID) }}">
-                                                {% if isLikedVideo %}
-                                                    <button class="cafe-comment-button-liked">Liked</button>
-                                                {% else %}
-                                                    <button class="cafe-comment-button">Like</button>
-                                                {% endif %}
-                                            </a>
+                                            <button
+                                                    id="likeButton"
+                                                    class="{{ 'cafe-comment-button-liked' if isLikedVideo else 'cafe-comment-button' }}"
+                                                    data-url="{{ url_for('likeVideoFromCreatorID', videoID=video[0], creatorID=creatorUserID) }}">
+                                                    {{ 'Liked' if isLikedVideo else 'Like' }}
+                                            </button>
                                         </div>
                                     </div>
                                     {% endif %}
@@ -145,14 +143,11 @@
                                 <p class="cafe-comment-likes-gap">{{ comment[6] }} Likes</p>
                                 <div class="cafe-watch-video-stats-vertical-divider"></div>
                                 <div class="cafe-comment-like-button">
-                                    <!-- This needs to be likeCommentFromCommenterID -->
-                                    <a class="cafe-hide-link-tag" href="{{ url_for('likeCommentFromCommenterID', commentID=comment[0], commenterID=comment[5]) }}">
-                                        {% if comment[7] == 1 %}
-                                            <button class="cafe-comment-button-liked">Liked</button>
-                                        {% else %}
-                                            <button class="cafe-comment-button">Like</button>
-                                        {% endif %}
-                                    </a>
+                                    <button
+                                            class="likeCommentButton {{ 'cafe-comment-button-liked' if comment[7] == 1 else 'cafe-comment-button' }}"
+                                            data-url="{{ url_for('likeCommentFromCommenterID', commentID=comment[0], commenterID=comment[5]) }}">
+                                            {{ 'Liked' if comment[7] == 1 else 'Like' }}
+                                    </button>
                                 </div>
                             </div>
                         </div>
