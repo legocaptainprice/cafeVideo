@@ -60,7 +60,11 @@
     position: sticky;
     top: 60px; /* Sticks below navbar */
     left: 0;
-    overflow-y: auto; /* Enables scrolling if content overflows */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    overflow-y: scroll;
 }
 
 /* Sidebar title */
@@ -1118,6 +1122,11 @@ video {
     border-bottom-right-radius: 5px;
     overflow: auto;
     z-index: 1100;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    overflow-y: scroll;
 }
 
 .hidden {
