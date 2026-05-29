@@ -1316,6 +1316,7 @@ video {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
     width: 290px;
     height: 100px;
+
 }
 
 .cafe-playlists-contents-profile-details {
@@ -1364,6 +1365,15 @@ video {
     color: white;
     border: none;
     align-self: flex-end;
+}
+
+.translucent-button {
+    background-color: #ddd;
+    z-index: 1100;
+    position: absolute;
+    width: 290px;
+    height: 100px;
+    opacity: 0%;
 }
 
 body, html {

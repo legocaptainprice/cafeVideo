@@ -4,6 +4,7 @@
     <div class="cafe-playlist-add-contents">
         {% for playlist in userPlaylists %}
         <div class="cafe-playlists-contents-box">
+            <button class="addVideoToPlaylist translucent-button" data-url="/playlist/{{ playlist[0] }}/add?v={{ video[0] }}"></button>
             <div class="cafe-playlists-contents-margin">
                 <h3 class="cafe-truncate cafe-playlist-header-fix" title="{{ playlist[2] }}">{{ playlist[2] }}</h3>
                 <div class="cafe-playlists-contents-profile-details">

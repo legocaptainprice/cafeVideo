@@ -1,7 +1,7 @@
 import sqlite3
 
 # Set the location for the database
-cafeDatabasePath = 'cafeDatabase_test.db'
+cafeDatabasePath = 'cafeDatabase.db'
 
 
 def connect_to_database():
@@ -29,6 +29,8 @@ def fetch_latest_videos():
             """)
     videos = cursor.fetchall()
 
+    conn.close()
+
     return videos
 
 
@@ -45,6 +47,8 @@ def fetch_profile_info(variant, userID):
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE userID = ?""", (userID,))
         profilePicture = cursor.fetchone()
+
+        conn.close()
 
         return profilePicture
 
@@ -63,6 +67,8 @@ def fetch_subscription_info(userID):
                             JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
                             WHERE subscriptions.userID = ?""", (userID,))
     subscriptionsInfo = cursor.fetchall()
+
+    conn.close()
 
     return subscriptionsInfo
 
@@ -88,6 +94,8 @@ def fetch_subscription_videos(variant, userID):
                                 """, (userID,))
         subscription_videos = cursor.fetchall()
 
+        conn.close()
+
         return subscription_videos
 
 
@@ -108,6 +116,8 @@ def fetch_user_notifications(variant, userID):
                        (userID,))
         notifications = cursor.fetchall()
 
+        conn.close()
+
         return notifications
 
 
@@ -126,4 +136,39 @@ def fetch_account_info(variant, userID):
                                 """, (userID,))
         featureAccess = cursor.fetchall()
 
+        conn.close()
+
         return featureAccess
+
+
+def fetch_user_playlist_info(variant, userID, videoID, playlistID):
+    """Fetches the playlist info of a playlist made by the user"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    if variant == "add":
+        # Check if playlist exists and if it was made by the user
+        cursor.execute("SELECT * FROM playlists WHERE playlistID = ? AND userID = ?", (playlistID, userID))
+        playlistExists = cursor.fetchone()
+
+        if playlistExists:
+            print(f"Playlist {playlistID} Found!")
+            # Check if video is already in playlist
+            cursor.execute("SELECT * FROM playlist_contents WHERE playlistID = ? AND videoID = ?", (playlistID, videoID))
+            videoInPlaylist = cursor.fetchone()
+
+            if videoInPlaylist:
+                # If the video is already in the playlist then remove it from the playlist
+                cursor.execute("DELETE FROM playlist_contents WHERE playlistID = ? AND videoID = ?", (playlistID, videoID))
+                conn.commit()
+                print("Video removed from playlist")
+                conn.close()
+            else:
+                # If the video is not in the playlist then add it to the playlist
+                cursor.execute("INSERT INTO playlist_contents (playlistID, videoID) VALUES (?, ?)", (playlistID, videoID))
+                conn.commit()
+                print("Video added to playlist")
+                conn.close()
+
+        else:
+            print("Playlist Not Found!")

@@ -1,17 +1,15 @@
-// If the add to playlist button is clicked
+// If the playlist is clicked
 document.addEventListener("DOMContentLoaded", function() {
-    const cafeAddToPlaylistButton = document.getElementById("showPlaylists");
-    const cafeAddToPlaylistPanel = document.getElementById("addToPlaylist");
+    const addVideoToPlaylist = document.querySelectorAll(".addVideoToPlaylist");
 
-    cafeAddToPlaylistButton.addEventListener("click", () => {
-        event.stopPropagation();
-        cafeAddToPlaylistPanel.classList.toggle("hidden");
-    });
+    addVideoToPlaylist.forEach(button => {
+        button.addEventListener("click", async () => {
+            const response = await fetch(button.dataset.url, {
+                method: "POST"
+            });
 
-    // If the cursor clicks anywhere outside the create playlist area
-    document.addEventListener("click", (event) => {
-        if (!cafeAddToPlaylistPanel.contains(event.target) && !cafeAddToPlaylistButton.contains(event.target)) {
-            cafeAddToPlaylistPanel.classList.add("hidden");
-        }
+            if (!response.ok) return;
+
+        });
     });
 });

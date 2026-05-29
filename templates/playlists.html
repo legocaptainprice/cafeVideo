@@ -25,19 +25,21 @@
                         {% if userPlaylists %}
                         <div class="cafe-playlist-contents">
                             {% for playlist in userPlaylists %}
-                            <div class="cafe-playlists-contents-box">
-                                <div class="cafe-playlists-contents-margin">
-                                    <h3 class="cafe-truncate" title="{{ playlist[2] }}">{{ playlist[2] }}</h3>
-                                    <div class="cafe-playlists-contents-profile-details">
-                                        <div class="cafe-profile-link">
-                                            <img class="cafe-navbar-pfp" src="{{ url_for('static',
+                            <a class="video-link" href="{{ url_for('viewPlaylist', playlistID=playlist[0]) }}">
+                                <div class="cafe-playlists-contents-box">
+                                    <div class="cafe-playlists-contents-margin">
+                                        <h3 class="cafe-truncate" title="{{ playlist[2] }}">{{ playlist[2] }}</h3>
+                                        <div class="cafe-playlists-contents-profile-details">
+                                            <div class="cafe-profile-link">
+                                                <img class="cafe-navbar-pfp" src="{{ url_for('static',
                                                 filename='profile/pfp/' + (playlist[6] if playlist[6] else 'profilepicturetest.png')) }}"
                                                  style="border-color: {{ playlist[7] or '#C78A4B' }} !important;">
+                                            </div>
+                                            <p class="cafe-playlists-contents-profile-name-line">{{ playlist[5] }} · {{ playlist[8] }} videos</p>
                                         </div>
-                                        <p class="cafe-playlists-contents-profile-name-line">{{ playlist[5] }} · {{ playlist[8] }} videos</p>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                             {% endfor %}
                         </div>
                         {% else %}

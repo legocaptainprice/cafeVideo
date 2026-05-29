@@ -53,7 +53,7 @@ def allowedFiletypes(filename, allowedExtensions):
 
 
 def connect_to_database():
-    # This is barely used, but it was here since early development so yeah lol
+    # This is planned to be removed in favour of the same function in sql_commands.py
     conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
     conn.row_factory = sqlite3.Row
@@ -167,13 +167,7 @@ def upload():
         conn = connect_to_database()
         cursor = conn.cursor()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                channelURL 
-                                FROM profiles 
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
         cursor.execute("""
                                         SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
                                         accounts.userID, accounts.username, channelURLEnabled, channelURL
@@ -183,16 +177,7 @@ def upload():
                                         JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
                                         WHERE subscriptions.userID = ?""", (userID,))
         subscriptionsInfo = cursor.fetchall()
-        cursor.execute("""
-                                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                                FROM notifications
-                                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                                WHERE notificationRecipientID = ?
-                                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template("upload.html", username=username, userID=session.get("userID"),
                                profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
@@ -346,16 +331,7 @@ def watchPage():
                                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                         WHERE userID = ?""", (userID,))
                 profilePicture = cursor.fetchone()
-                cursor.execute("""
-                                        SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                        FROM notifications
-                                        JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        WHERE notificationRecipientID = ?
-                                        ORDER BY notificationDateTime DESC
-                                    """,
-                               (userID,))
-                notifications = cursor.fetchall()
+                notifications = sql_commands.fetch_user_notifications("minimal", userID)
                 print(notifications)
 
                 # Retrieve playlists by the user
@@ -474,16 +450,7 @@ def searchForVideo():
                                                     JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
                                                     WHERE subscriptions.userID = ?""", (userID,))
             subscriptionsInfo = cursor.fetchall()
-            cursor.execute("""
-                                                    SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                                    FROM notifications
-                                                    JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                                    WHERE notificationRecipientID = ?
-                                                    ORDER BY notificationDateTime DESC
-                                                """,
-                           (userID,))
-            notifications = cursor.fetchall()
+            notifications = sql_commands.fetch_user_notifications("minimal", userID)
             conn.close()
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
                                    num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
@@ -570,16 +537,7 @@ def getAccountProfile():
                 isSubscribedToChannel = cursor.fetchone()
                 if isSubscribedToChannel:
                     isSubscribedToChannel = isSubscribedToChannel[0]
-                cursor.execute("""
-                                                        SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                                        FROM notifications
-                                                        JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                                        WHERE notificationRecipientID = ?
-                                                        ORDER BY notificationDateTime DESC
-                                                    """,
-                               (userID_session,))
-                notifications = cursor.fetchall()
+                notifications = sql_commands.fetch_user_notifications("minimal", userID)
                 return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
                                        userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
                                        num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
@@ -1494,6 +1452,12 @@ def playlistAdd(playlistID):
     if request.method == "POST":
         try:
             userID = session.get('userID')
+            videoID = request.args.get('v')
+
+            sql_commands.fetch_user_playlist_info("add", userID, videoID, playlistID)
+
+            return redirect(request.referrer)
+
         except:
             return redirect(url_for('indexPage'))
 

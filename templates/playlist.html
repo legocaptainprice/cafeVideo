@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>cafeVideo - {{playlistInfo[2]}} (Playlist)</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
+    <div class="cafe-main-body">
+        {% include "components/sidebar.html" %}
+        <div class="cafe-video-list-body">
+                <div class="cafe-video-list-contents-liked-videos">
+                    <p class="cafe-video-list-title">{{playlistInfo[2]}} (Playlist)</p>
+                    <div class="cafe-video-posts-row">
+                        {% for video in videos %}
+                        <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
+                            <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
+                                <div class="cafe-video-post-thumbnail">
+                                    <div class="cafe-video-post-thumbnail-border">
+                                        <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + (video[4] if video[4] else 'videotemplate.png')) }}">
+                                    </div>
+                                </div>
+                                <div class="cafe-align-video-post-details">
+                                    <div class="cafe-video-post-profile-picture" style="border-color: {{ video[7] or '#C78A4B' }} !important;">
+                                        <img class="cafe-video-post-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (video[6] if video[6] else 'profilepicturetest.png')) }}">
+                                    </div>
+                                    <div class="cafe-video-post-details">
+                                        <div class="cafe-video-post-title">
+                                            <p>{{ video[2] }}</p>  <!-- Video Title -->
+                                        </div>
+                                        <div class="cafe-video-post-channel">
+                                            <p>{{ video[1] }}</p>  <!-- Uploader Username -->
+                                        </div>
+                                        <div class="cafe-video-post-views">
+                                            <p>{{ video[3] }} views · {{ time_ago(video[5]) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+        </div>
+    </div>
+    <!-- Rename to cafeChannels -->
+
+</body>
+</html>
