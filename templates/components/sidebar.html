@@ -18,7 +18,7 @@
             <a href="{{ url_for('watchHistory') }}">Watch History</a>
             <a href="{{ url_for('userPlaylist') }}">Playlists</a>
             <a href="{{ url_for('likedVideosPage') }}">Liked videos</a>
-            <a href="{{ url_for('indexPage') }}">Saves</a>
+            <a href="{{ url_for('viewSaves') }}">Saves</a>
         </div>
         {% if username %}
             <div class="cafe-sidebar-left-title">
@@ -28,7 +28,7 @@
             <div class="cafe-sidebar-subscriptions-contents">
                 {% for subscription in subscriptionsInfo %}
                     {% if subscription[4] == 0 %}
-                        <a class="account-link" href="/{{ url_for('getAccountProfile', id=subscription[2]) }}">
+                        <a class="account-link" href="{{ url_for('getAccountProfile', id=subscription[2]) }}">
                             <div class="cafe-sidebar-subscriptions-channel">
                                 <img class="cafe-sidebar-subscriptions-profile-picture" style="border-color: {{ subscription[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (subscription[0] if subscription[0] else 'profilepicturetest.png')) }}">
                                 <p class="cafe-sidebar-subscriptions-username">{{ subscription[3] }}</p>

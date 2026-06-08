@@ -1,10 +1,12 @@
 import sqlite3
 import time
 from datetime import datetime
+
+import config
 import time_converter
 
 # Set the location for the database path
-cafeDatabasePath = 'cafeDatabase.db'
+cafeDatabasePath = config.sqlite_db_path
 
 
 def uploadVideoToDatabase(userID, title, description, videoTags, filename, thumbnailFilename):

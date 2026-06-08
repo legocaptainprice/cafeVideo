@@ -1,0 +1,10 @@
+# Host settings
+ip_address = "localhost"
+port = 5000
+debug = True
+# Database settings
+sqlite_db_path = "cafeDatabase_test.db"
+# Security settings
+session_cookie_httponly = True
+session_cookie_secure = False
+session_cookie_samesite = "Lax"

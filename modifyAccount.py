@@ -1,7 +1,9 @@
 import sqlite3
 
+import config
+
 # Set location for database path
-cafeDatabasePath = 'cafeDatabase.db'
+cafeDatabasePath = config.sqlite_db_path
 
 
 def changeAccountDetailsConfirm(userID, username, channelURL):

@@ -1,8 +1,10 @@
 import sqlite3
 from datetime import datetime
 
+import config
+
 # Set the location for database path
-cafeDatabasePath = 'cafeDatabase.db'
+cafeDatabasePath = config.sqlite_db_path
 
 
 def createAccount(username, hashed_password):
@@ -19,6 +21,8 @@ def createAccount(username, hashed_password):
         joinDate = datetime.today()
         formatted_joinDate = joinDate.strftime("%d/%m/%Y")
         cursor.execute("INSERT INTO profiles (userID, joinDate, profileColorTheme, channelURLEnabled, channelURL) VALUES (?, ?, ?, ?, ?)", (userID[0], formatted_joinDate, 5, 0, username))
+        conn.commit()
+        cursor.execute("INSERT INTO playlists (userID, playlistName, playlistType, visibilityType) VALUES (?, ?, ?, ?)", (userID[0], f"{username}'s Saved Videos", "watch_queue", "Private"))
         conn.commit()
         print("Account created")
         return True, "Account created successfully!" # Return success message

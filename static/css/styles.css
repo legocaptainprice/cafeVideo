@@ -331,7 +331,7 @@ video {
     display: flex;
     flex-direction: column;
     align-items: flex-start; /* Aligns everything to the left */
-    max-width: 985px; /* Keeps it from stretching too much */
+    max-width: 94%; /* Keeps it from stretching too much */
     margin-left: 29px; /* Pushes it slightly from the left */
     gap: 5px;
 }

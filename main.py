@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, createAccount, post, os, modifyAccount, sql_commands
+import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -24,13 +24,13 @@ os.makedirs(cafe.config['UPLOAD_PROFILE_PICTURE_FOLDER'], exist_ok=True)
 os.makedirs(cafe.config['UPLOAD_PROFILE_BANNER_FOLDER'], exist_ok=True)
 
 # Set the location for the database
-cafeDatabasePath = 'cafeDatabase.db'
+cafeDatabasePath = config.sqlite_db_path
 
 # Security related features
 cafe.config.update(
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=False,  # Enable if hosting publicly
-    SESSION_COOKIE_SAMESITE="Lax"
+    SESSION_COOKIE_HTTPONLY=config.session_cookie_httponly,
+    SESSION_COOKIE_SECURE=config.session_cookie_secure,  # Enable if hosting publicly
+    SESSION_COOKIE_SAMESITE=config.session_cookie_samesite
 )
 cafeSecretKey = os.getenv("SECRET_CAFE_KEY")  # You MUST set a secret key in your environment variables
 
@@ -64,7 +64,6 @@ def connect_to_database():
 def indexPage():
     """The home page for cafeVideo"""
     conn = connect_to_database()
-    cursor = conn.cursor()
     username = session.get("username")
     userID = session.get("userID")
 
@@ -537,7 +536,7 @@ def getAccountProfile():
                 isSubscribedToChannel = cursor.fetchone()
                 if isSubscribedToChannel:
                     isSubscribedToChannel = isSubscribedToChannel[0]
-                notifications = sql_commands.fetch_user_notifications("minimal", userID)
+                notifications = sql_commands.fetch_user_notifications("minimal", userID_session)
                 return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
                                        userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
                                        num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
@@ -1533,4 +1532,75 @@ def viewPlaylist(playlistID):
         abort(404)
 
 
-cafe.run("localhost", 5000, debug=True)
+@cafe.route('/saves')
+def viewSaves():
+    username = session.get('username')
+    userID = session.get('userID')
+
+    if username:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM playlists WHERE userID = ? AND playlistType = ?", (userID, "watch_queue"))
+        playlistIDFound = cursor.fetchone()
+
+        if playlistIDFound:
+            print(f"Playlist ID: {playlistIDFound[0]} has been found!\nPlaylist Title: {playlistIDFound[2]}")
+
+            print(playlistIDFound[2])
+
+            cursor.execute("""
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
+                                            channelURL
+                                            FROM profiles 
+                                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                            WHERE userID = ?""", (userID,))
+            profilePicture = cursor.fetchone()
+
+            cursor.execute("""
+                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
+                                    accounts.username, channelURLEnabled, channelURL
+                                    FROM profiles
+                                    JOIN accounts ON profiles.userID = accounts.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
+                                    WHERE subscriptions.userID = ?""",
+                        (userID,))
+            subscriptionsInfo = cursor.fetchall()
+
+            cursor.execute("""
+                                    SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
+                                    FROM notifications
+                                    JOIN profiles ON notifications.notificationSenderID = profiles.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    WHERE notificationRecipientID = ?
+                                    ORDER BY notificationDateTime DESC
+                                                """,
+                        (userID,))
+            notifications = cursor.fetchall()
+
+            # Fetch the latest videos for the playlist section
+            cursor.execute("""
+                                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                                    videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                                    profileColorSets.profilePictureBorderColor
+                                    FROM videos
+                                    JOIN accounts ON videos.userID = accounts.userID
+                                    JOIN profiles ON profiles.userID = accounts.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    JOIN playlist_contents ON playlist_contents.videoID = videos.videoID
+                                    WHERE playlist_contents.playlistID = ?
+                                    ORDER BY playlist_contents.videoID DESC  -- Shows newest first
+                                """, (playlistIDFound[0],))
+            videos = cursor.fetchall()  # List of tuples
+
+            return render_template('playlist.html', username=username, videos=videos, userID=userID,
+                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
+                                notifications=notifications, playlistInfo=playlistIDFound)
+        else:
+            abort(404)
+    else:
+        return redirect(url_for('indexPage'))
+
+
+cafe.run(config.ip_address, config.port, debug=config.debug)

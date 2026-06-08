@@ -1,7 +1,9 @@
 import sqlite3
 
+import config
+
 # Set the location for the database
-cafeDatabasePath = 'cafeDatabase.db'
+cafeDatabasePath = config.sqlite_db_path
 
 
 def connect_to_database():
