@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config
+import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config, manifest
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -318,6 +318,7 @@ def watchPage():
             if isLikedVideo:
                 isLikedVideo = isLikedVideo[0]
             timestamp = int(video[6])
+            isVideoSaved = sql_commands.fetch_watch_page_details("saves", userID, videoID)
             datePublished = getVideoDatetime(timestamp)
 
             if username:
@@ -362,7 +363,7 @@ def watchPage():
                                    isSubscribedToChannel=isSubscribedToChannel, num_of_likes=num_of_likes,
                                    isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago,
                                    profilePicture=profilePicture, notifications=notifications,
-                                   viewSimplifier=viewSimplify, userPlaylists=userPlaylists)
+                                   viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved)
         else:
             return "Video not found", 404
     else:
@@ -1527,7 +1528,7 @@ def viewPlaylist(playlistID):
 
         return render_template('playlist.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, playlistInfo=playlistIDFound)
+                               notifications=notifications, playlistInfo=playlistIDFound, watch_queue=False)
     else:
         abort(404)
 
@@ -1565,7 +1566,7 @@ def viewSaves():
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                     JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
                                     WHERE subscriptions.userID = ?""",
-                        (userID,))
+                           (userID,))
             subscriptionsInfo = cursor.fetchall()
 
             cursor.execute("""
@@ -1576,7 +1577,7 @@ def viewSaves():
                                     WHERE notificationRecipientID = ?
                                     ORDER BY notificationDateTime DESC
                                                 """,
-                        (userID,))
+                           (userID,))
             notifications = cursor.fetchall()
 
             # Fetch the latest videos for the playlist section
@@ -1595,12 +1596,69 @@ def viewSaves():
             videos = cursor.fetchall()  # List of tuples
 
             return render_template('playlist.html', username=username, videos=videos, userID=userID,
-                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                                notifications=notifications, playlistInfo=playlistIDFound)
+                                   time_ago=time_ago, profilePicture=profilePicture,
+                                   subscriptionsInfo=subscriptionsInfo,
+                                   notifications=notifications, playlistInfo=playlistIDFound, watch_queue=True)
         else:
             abort(404)
     else:
         return redirect(url_for('indexPage'))
+
+
+@cafe.route('/about')
+def aboutPage():
+    username = session.get('username')
+    userID = session.get('userID')
+
+    WEB_TITLE = manifest.WEB_TITLE
+    VERSION = f"{manifest.MAJOR}.{manifest.MINOR}.{manifest.PATCH}"
+    CHANNEL = manifest.CHANNEL
+    CODENAME = manifest.CODENAME
+
+    if username:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
+                                channelURL
+                                FROM profiles 
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE userID = ?""", (userID,))
+        profilePicture = cursor.fetchone()
+
+        cursor.execute("""
+                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
+                                FROM notifications
+                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE notificationRecipientID = ?
+                                ORDER BY notificationDateTime DESC
+                                                """,
+                       (userID,))
+        notifications = cursor.fetchall()
+
+        return render_template('about.html', username=username, userID=userID,
+                               profilePicture=profilePicture, notifications=notifications, WEB_TITLE=WEB_TITLE,
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL)
+    else:
+        return render_template('about.html', WEB_TITLE=WEB_TITLE,
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL)
+
+
+@cafe.route('/saves/add', methods=["POST"])
+def saveVideo():
+    if request.method == "POST":
+        try:
+            userID = session.get('userID')
+            videoID = request.args.get('v')
+
+            sql_commands.add_to_user_saved_videos(userID, videoID)
+
+            return redirect(request.referrer)
+
+        except:
+            return redirect(url_for('indexPage'))
 
 
 cafe.run(config.ip_address, config.port, debug=config.debug)

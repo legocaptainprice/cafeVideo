@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>cafeVideo - About</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
+    <div class="cafe-main-body">
+        <div class="cafe-not-found">
+            <h1>{{ WEB_TITLE }}</h1>
+            <p>{{ CODENAME }}</p>
+            {% if CHANNEL %}
+                <p>{{ VERSION + "-" + CHANNEL}}</p>
+            {% else %}
+                <p>{{ VERSION }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Rename to cafeChannels -->
+
+</body>
+</html>

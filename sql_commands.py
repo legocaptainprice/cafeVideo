@@ -9,7 +9,6 @@ cafeDatabasePath = config.sqlite_db_path
 def connect_to_database():
     conn = sqlite3.connect(cafeDatabasePath)
     conn.execute('PRAGMA foreign_keys = ON')
-    conn.row_factory = sqlite3.Row
     return conn
 
 
@@ -156,21 +155,54 @@ def fetch_user_playlist_info(variant, userID, videoID, playlistID):
         if playlistExists:
             print(f"Playlist {playlistID} Found!")
             # Check if video is already in playlist
-            cursor.execute("SELECT * FROM playlist_contents WHERE playlistID = ? AND videoID = ?", (playlistID, videoID))
+            cursor.execute("SELECT * FROM playlist_contents WHERE playlistID = ? AND videoID = ?",
+                           (playlistID, videoID))
             videoInPlaylist = cursor.fetchone()
 
             if videoInPlaylist:
                 # If the video is already in the playlist then remove it from the playlist
-                cursor.execute("DELETE FROM playlist_contents WHERE playlistID = ? AND videoID = ?", (playlistID, videoID))
+                cursor.execute("DELETE FROM playlist_contents WHERE playlistID = ? AND videoID = ?",
+                               (playlistID, videoID))
                 conn.commit()
                 print("Video removed from playlist")
                 conn.close()
             else:
                 # If the video is not in the playlist then add it to the playlist
-                cursor.execute("INSERT INTO playlist_contents (playlistID, videoID) VALUES (?, ?)", (playlistID, videoID))
+                cursor.execute("INSERT INTO playlist_contents (playlistID, videoID) VALUES (?, ?)",
+                               (playlistID, videoID))
                 conn.commit()
                 print("Video added to playlist")
                 conn.close()
 
         else:
             print("Playlist Not Found!")
+
+
+def add_to_user_saved_videos(userID, videoID):
+    """Adds the video the user requested to save to the saved videos playlist"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM playlists WHERE userID = ? and playlistType = ?", (userID, "watch_queue"))
+    userSavedVideos = cursor.fetchone()
+
+    fetch_user_playlist_info("add", userID, videoID, userSavedVideos[0])
+
+
+def fetch_watch_page_details(variant, userID, videoID):
+    """Fetches the necessary details from the database for the watch page for the selected video"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    if variant == "saves":
+        cursor.execute("SELECT * FROM playlists WHERE userID = ? and playlistType = ?", (userID, "watch_queue"))
+        userSavedVideos = cursor.fetchone()  # Retrieve the playlist where saved videos are stored
+
+        cursor.execute("SELECT * FROM playlist_contents WHERE playlistID = ? AND videoID = ?",
+                       (userSavedVideos[0], videoID))
+        isVideoSaved = cursor.fetchone()
+
+        if isVideoSaved:
+            return True
+        else:
+            return False

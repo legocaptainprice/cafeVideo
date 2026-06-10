@@ -110,9 +110,9 @@
                                     </button>
                                     <button
                                             id="Save"
-                                            class="cafe-comment-button"
-                                            data-url="">
-                                            Save
+                                            class="{{ 'cafe-comment-button-liked' if isVideoSaved else 'cafe-comment-button' }}"
+                                            data-url="saves/add?v={{ video[0] }}">
+                                            {{ 'Saved' if isVideoSaved else 'Save' }}
                                     </button>
                                     <br><br>
                                 </div>
