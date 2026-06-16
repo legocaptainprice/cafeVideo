@@ -318,7 +318,6 @@ def watchPage():
             if isLikedVideo:
                 isLikedVideo = isLikedVideo[0]
             timestamp = int(video[6])
-            isVideoSaved = sql_commands.fetch_watch_page_details("saves", userID, videoID)
             datePublished = getVideoDatetime(timestamp)
 
             if username:
@@ -351,10 +350,13 @@ def watchPage():
                                     """, (userID,))
                 userPlaylists = cursor.fetchall()  # List of tuples
 
+                isVideoSaved = sql_commands.fetch_watch_page_details("saves", userID, videoID)
+
             else:
                 profilePicture = ["profilepicturetest.png"]
                 notifications = []
                 userPlaylists = []
+                isVideoSaved = False
 
             return render_template('watch.html', video=video, username=username, videos=videos,
                                    creatorUsername=creatorUsername, comments=comments, userID=userID,
@@ -1659,6 +1661,29 @@ def saveVideo():
 
         except:
             return redirect(url_for('indexPage'))
+
+
+@cafe.route('/corners')
+def corners_explore():
+    username = session.get("username")
+    userID = session.get("userID")
+
+    if username:
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+        featureAccess = sql_commands.fetch_account_info("feature_access", userID)
+        try:
+            print(featureAccess[0][0])
+        except:
+            pass
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        return render_template('corners.html', username=username, userID=userID,  profilePicture=profilePicture,
+                               subscriptionsInfo=subscriptionsInfo, featureAccess=featureAccess,
+                               notifications=notifications)
+    else:
+        profilePicture = ["profilepicturetest.png"]
+        return redirect(url_for('explorePage'))
 
 
 cafe.run(config.ip_address, config.port, debug=config.debug)
