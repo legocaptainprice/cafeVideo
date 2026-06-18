@@ -2,6 +2,8 @@ import sqlite3
 
 import config
 
+from collections import Counter
+
 # Set the location for the database
 cafeDatabasePath = config.sqlite_db_path
 
@@ -206,3 +208,73 @@ def fetch_watch_page_details(variant, userID, videoID):
             return True
         else:
             return False
+
+
+def fetch_user_watch_history(userID):
+    """Fetches the user watch history from the database"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    # Fetch the latest videos for the watch history section
+    cursor.execute("""
+                        SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                        videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                        profileColorSets.profilePictureBorderColor, videos.videoTags
+                        FROM videos
+                        JOIN accounts ON videos.userID = accounts.userID
+                        JOIN profiles ON profiles.userID = accounts.userID
+                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                        JOIN watchHistory ON watchHistory.videoID = videos.videoID
+                        WHERE watchHistory.userID = ?
+                        ORDER BY watchHistory.historyDateTime DESC  -- Shows newest first
+                        """, (userID,))
+    watchHistory = cursor.fetchall()
+
+    return watchHistory
+
+
+def extract_tags_from_video(tags):
+    tags = [tag.strip() for tag in tags.split(",")]
+
+    return tags
+
+
+def fetch_user_recommended_feed(userID):
+    """Fetches the user recommended feed for the home page"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    video_tags_list = []
+
+    watchHistory = fetch_user_watch_history(userID)
+    print(watchHistory)
+
+    for videoWatched in watchHistory:
+        video_tags = videoWatched[8]
+
+        video_tags_extracted = extract_tags_from_video(video_tags)
+
+        try:
+            for videoTag in video_tags_extracted:
+                video_tags_list.append(videoTag)
+        except:
+            pass
+
+    rank_video_tags = Counter(video_tags_list)
+
+    top_video_tags = [tag for tag, _ in rank_video_tags.most_common(3)]
+
+    print(top_video_tags)
+
+    cursor.execute(f"""
+                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
+                            videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
+                            profiles.channelURLEnabled, profiles.channelURL 
+                            FROM videos 
+                            JOIN accounts ON videos.userID = accounts.userID
+                            JOIN profiles ON profiles.userID = accounts.userID
+                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                            WHERE {" OR ".join(["(',' || REPLACE(videoTags, ' ', '') || ',') LIKE ?"] * len(top_video_tags))}
+                    """, [f"%,{tag},%" for tag in top_video_tags])
+    recommended_videos = cursor.fetchall()
+
+    return recommended_videos

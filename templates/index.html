@@ -16,7 +16,33 @@
             <div class="cafe-video-list-contents-recommended">
                 <p class="cafe-video-list-title">Recommended Feed</p>
                 <div class="cafe-video-posts-row">
-                    <!-- Videos go in this element -->
+                    {% for recommendedVideo in recommended_videos %}
+                        <a class="video-link" href="{{ url_for('watchPage', v=recommendedVideo[0]) }}">
+                            <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
+                                <div class="cafe-video-post-thumbnail">
+                                    <div class="cafe-video-post-thumbnail-border">
+                                        <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + (recommendedVideo[4] if recommendedVideo[4] else 'videotemplate.png')) }}">
+                                    </div>
+                                </div>
+                                <div class="cafe-align-video-post-details">
+                                    <div class="cafe-video-post-profile-picture" style="border-color: {{ recommendedVideo[7] or '#C78A4B' }} !important;">
+                                        <img class="cafe-video-post-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (recommendedVideo[6] if recommendedVideo[6] else 'profilepicturetest.png')) }}">
+                                    </div>
+                                    <div class="cafe-video-post-details">
+                                        <div class="cafe-video-post-title">
+                                            <p>{{ recommendedVideo[2] }}</p>  <!-- Video Title -->
+                                        </div>
+                                        <div class="cafe-video-post-channel">
+                                            <p>{{ recommendedVideo[1] }}</p>  <!-- Uploader Username -->
+                                        </div>
+                                        <div class="cafe-video-post-views">
+                                            <p>{{ recommendedVideo[3] }} views · {{ time_ago(recommendedVideo[5]) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
                 </div>
             </div>
             {% if username %}

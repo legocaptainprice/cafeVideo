@@ -82,10 +82,11 @@ def indexPage():
 
         notifications = sql_commands.fetch_user_notifications("minimal", userID)
         conn.close()
+        recommended_videos = sql_commands.fetch_user_recommended_feed(userID)
         return render_template('index.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                subscription_videos=subscription_videos, featureAccess=featureAccess,
-                               notifications=notifications)
+                               notifications=notifications, recommended_videos=recommended_videos)
     else:
         profilePicture = ["profilepicturetest.png"]
         conn.close()
@@ -1303,19 +1304,7 @@ def watchHistory():
         cursor = conn.cursor()
 
         # Fetch the latest videos for the watch history section
-        cursor.execute("""
-                        SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
-                        videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                        profileColorSets.profilePictureBorderColor
-                        FROM videos
-                        JOIN accounts ON videos.userID = accounts.userID
-                        JOIN profiles ON profiles.userID = accounts.userID
-                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                        JOIN watchHistory ON watchHistory.videoID = videos.videoID
-                        WHERE watchHistory.userID = ?
-                        ORDER BY watchHistory.historyDateTime DESC  -- Shows newest first
-                    """, (userID,))
-        videos = cursor.fetchall()  # List of tuples
+        videos = sql_commands.fetch_user_watch_history(userID)
 
         cursor.execute("""
                                     SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
