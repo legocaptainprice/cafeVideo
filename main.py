@@ -164,19 +164,9 @@ def upload():
 
     # If the user is not logged in, send them to the login page
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-        cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
-                                        accounts.userID, accounts.username, channelURLEnabled, channelURL
-                                        FROM profiles
-                                        JOIN accounts ON profiles.userID = accounts.userID
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                        WHERE subscriptions.userID = ?""", (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
         notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template("upload.html", username=username, userID=session.get("userID"),
@@ -250,12 +240,7 @@ def watchPage():
         conn = connect_to_database()
         cursor = conn.cursor()
 
-        cursor.execute("""SELECT * 
-                                FROM videos 
-                                JOIN profiles ON profiles.userID = videos.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE videoID = ?""", (videoID,))
-        video = cursor.fetchone()
+        video = sql_commands.fetch_video_for_watch_page(videoID)
 
         print(video)
 
@@ -276,29 +261,8 @@ def watchPage():
             conn.commit()
             cursor.execute("SELECT username FROM accounts WHERE userID = ?", (video[1],))
             creatorUsername = cursor.fetchone()
-            cursor.execute("""
-                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
-                            FROM videos
-                            JOIN accounts ON videos.userID = accounts.userID
-                            JOIN profiles ON profiles.userID = accounts.userID
-                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            ORDER BY videoID DESC  -- Shows newest first
-                        """)
-            videos = cursor.fetchall()  # List of tuples
-            cursor.execute("""
-                            SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, 
-                            profileColorSets.profilePictureBorderColor, comments.userID, 
-                            COUNT(likedComments.commentID) AS likeCount, SUM(likedComments.userID = ?) AS isLikedByUser
-                            FROM comments
-                            JOIN accounts ON comments.userID = accounts.userID
-                            JOIN profiles ON profiles.userID = accounts.userID
-                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            LEFT JOIN likedComments ON likedComments.commentID = comments.commentID
-                            WHERE comments.videoID = ? 
-                            GROUP BY comments.commentID
-                            ORDER BY comments.commentID DESC 
-                        """, (session.get("userID"), videoID))
-            comments = cursor.fetchall()
+            videos = sql_commands.fetch_latest_videos()
+            comments = sql_commands.fetch_comments_section(session.get("userID"), videoID)
             print(comments)
 
             num_of_comments = len(comments)
@@ -324,13 +288,7 @@ def watchPage():
             if username:
                 post.sendWatchedVideoToDatabase(userID, videoID)  # Add video to user's watch history
 
-                cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
-                                        channelURLEnabled, channelURL
-                                        FROM profiles 
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        WHERE userID = ?""", (userID,))
-                profilePicture = cursor.fetchone()
+                profilePicture = sql_commands.fetch_profile_info("minimal", userID)
                 notifications = sql_commands.fetch_user_notifications("minimal", userID)
                 print(notifications)
 
@@ -368,9 +326,9 @@ def watchPage():
                                    profilePicture=profilePicture, notifications=notifications,
                                    viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved)
         else:
-            return "Video not found", 404
+            return "Video not found", abort(404)
     else:
-        return "VideoID is required", 400
+        return "VideoID is required", abort(404)
 
 
 @cafe.route('/postComment', methods=["POST"])

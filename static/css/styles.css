@@ -425,6 +425,7 @@ video {
     display: flex;
     flex-direction: column;
     margin-left: 5px;
+    width: 99.5%;
 }
 
 .cafe-comment-form {
@@ -454,7 +455,7 @@ video {
 }
 
 .cafe-comment-box {
-    width: 970px;
+    width: 99.5%;
     border-radius: 5px;
     color: white;
     background: rgba(178, 122, 84, 0.75);

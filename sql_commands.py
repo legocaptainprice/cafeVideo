@@ -278,3 +278,41 @@ def fetch_user_recommended_feed(userID):
     recommended_videos = cursor.fetchall()
 
     return recommended_videos
+
+
+def fetch_video_for_watch_page(videoID):
+    """Fetches the queried video information from the database"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT * 
+                                    FROM videos 
+                                    JOIN profiles ON profiles.userID = videos.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    WHERE videoID = ?""", (videoID,))
+    video = cursor.fetchone()
+
+    return video
+
+
+def fetch_comments_section(userID, videoID):
+    """Fetches the comment section for the video"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+                            SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, 
+                            profileColorSets.profilePictureBorderColor, comments.userID, 
+                            COUNT(likedComments.commentID) AS likeCount, SUM(likedComments.userID = ?) AS isLikedByUser
+                            FROM comments
+                            JOIN accounts ON comments.userID = accounts.userID
+                            JOIN profiles ON profiles.userID = accounts.userID
+                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                            LEFT JOIN likedComments ON likedComments.commentID = comments.commentID
+                            WHERE comments.videoID = ? 
+                            GROUP BY comments.commentID
+                            ORDER BY comments.commentID DESC 
+                            """, (userID, videoID))
+    comments = cursor.fetchall()
+
+    return comments
