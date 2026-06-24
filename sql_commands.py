@@ -246,27 +246,27 @@ def fetch_user_recommended_feed(userID):
     video_tags_list = []
 
     watchHistory = fetch_user_watch_history(userID)
-    print(watchHistory)
 
-    for videoWatched in watchHistory:
-        video_tags = videoWatched[8]
+    if watchHistory:
+        for videoWatched in watchHistory:
+            video_tags = videoWatched[8]
 
-        video_tags_extracted = extract_tags_from_video(video_tags)
+            video_tags_extracted = extract_tags_from_video(video_tags)
 
-        try:
-            for videoTag in video_tags_extracted:
-                video_tags_list.append(videoTag)
-        except:
-            pass
+            try:
+                for videoTag in video_tags_extracted:
+                    video_tags_list.append(videoTag)
+            except:
+                pass
 
-    rank_video_tags = Counter(video_tags_list)
+        rank_video_tags = Counter(video_tags_list)
 
-    top_video_tags = [tag for tag, _ in rank_video_tags.most_common(3)]
+        top_video_tags = [tag for tag, _ in rank_video_tags.most_common(10)]
 
-    print(top_video_tags)
+        print(top_video_tags)
 
-    cursor.execute(f"""
-                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
+        cursor.execute(f"""
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
                             videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
                             profiles.channelURLEnabled, profiles.channelURL 
                             FROM videos 
@@ -274,8 +274,10 @@ def fetch_user_recommended_feed(userID):
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             WHERE {" OR ".join(["(',' || REPLACE(videoTags, ' ', '') || ',') LIKE ?"] * len(top_video_tags))}
-                    """, [f"%,{tag},%" for tag in top_video_tags])
-    recommended_videos = cursor.fetchall()
+                    """, [f"%,{tag.replace(' ', '')},%" for tag in top_video_tags])
+        recommended_videos = cursor.fetchall()
+    else:
+        recommended_videos = []
 
     return recommended_videos
 
