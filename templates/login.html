@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <title>cafeVideo - Login</title>
+    <title>cafeVideo - {{ page_type }}</title>
 </head>
 <body>
     <div class="cafe-header-navbar">
@@ -13,7 +13,7 @@
             <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
                 <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
             </form>
-            <div class="cafe-header-navbar-item-right cafe-header-navbar-item"><a href="login">Login</a></div>
+            <div class="cafe-header-navbar-item-right cafe-header-navbar-item"><a href="{{ ('register' if page_type == 'Login' else 'login') }}">{{ ('Register' if page_type == 'Login' else 'Login') }}</a></div>
         </div>
     </div>
     <div class="cafe-main-body">
@@ -32,6 +32,7 @@
             </div>
         </div>
         <div class="cafe-video-list-body">
+            {% if page_type == "Login" %}
             <div class="cafe-login-body">
                 <div class="cafe-login-title">
                     <h1>Login to cafeVideo!</h1>
@@ -45,6 +46,7 @@
                     <p style="color: red">{{error}}</p>
                 {% endif %}
             </div>
+            {% elif page_type == "Register" %}
             <div class="cafe-register-body">
                 <div class="cafe-register-title">
                     <h1>Register an account on cafeVideo!</h1>
@@ -58,6 +60,7 @@
                     <p style="color: red">{{error}}</p>
                 {% endif %}
             </div>
+            {% endif %}
         </div>
     </div>
     <!-- Rename to cafeChannels -->

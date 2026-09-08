@@ -98,10 +98,25 @@ def loginPage():
     """Displays the login page to the user by rendering the login page template"""
     username = session.get("username")
 
+    page_type = "Login"
+
     if username:
         return redirect(url_for("indexPage"))
     else:
-        return render_template('login.html')
+        return render_template('login.html', page_type=page_type)
+
+
+@cafe.route('/register')
+def registerPage():
+    """Displays the register page to the user by rendering the login page template"""
+    username = session.get("username")
+
+    page_type = "Register"
+
+    if username:
+        return redirect(url_for("indexPage"))
+    else:
+        return render_template('login.html', page_type=page_type)
 
 
 @cafe.route('/loginAuth', methods=['GET', 'POST'])
