@@ -153,6 +153,10 @@ a {
     border-radius: 5px;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
 }
 
 .cafe-register-body {
@@ -163,6 +167,10 @@ a {
     border-radius: 5px;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
 }
 
 .cafe-video-post-container {
