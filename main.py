@@ -100,6 +100,8 @@ def loginPage():
 
     page_type = "Login"
 
+    sql_commands.fetch_video_recommendation_board()
+
     if username:
         return redirect(url_for("indexPage"))
     else:
@@ -112,6 +114,8 @@ def registerPage():
     username = session.get("username")
 
     page_type = "Register"
+
+    sql_commands.fetch_video_recommendation_board()
 
     if username:
         return redirect(url_for("indexPage"))
@@ -141,7 +145,7 @@ def loginAuthAPI():
             session['username'] = user['username']  # Store username in session
             return redirect(url_for("indexPage"))
 
-        return render_template("login.html", error="Invalid username or password")
+        return cafe.redirect(url_for('loginPage', error="Invalid username or password"))
 
     return cafe.redirect('/login.html', error=None)
 

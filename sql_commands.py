@@ -2,6 +2,8 @@ import sqlite3
 
 import config
 
+import random
+
 from collections import Counter
 
 # Set the location for the database
@@ -318,3 +320,31 @@ def fetch_comments_section(userID, videoID):
     comments = cursor.fetchall()
 
     return comments
+
+
+def fetch_video_recommendation_board():
+    """Fetches the video recommendation board for the login and register page"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM videos")
+
+    num_of_videos = cursor.fetchone()[0]
+
+    if num_of_videos:
+        video_recommendation_1_randomizer = random.randint(1, num_of_videos)
+        video_recommendation_2_randomizer = random.randint(1, num_of_videos)
+        video_recommendation_3_randomizer = random.randint(1, num_of_videos)
+
+        cursor.execute("SELECT * FROM videos WHERE videoID = ?", (video_recommendation_1_randomizer,))
+        video_recommendation_1 = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM videos WHERE videoID = ?", (video_recommendation_2_randomizer,))
+        video_recommendation_2 = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM videos WHERE videoID = ?", (video_recommendation_3_randomizer,))
+        video_recommendation_3 = cursor.fetchone()
+
+        return video_recommendation_1, video_recommendation_2, video_recommendation_3
+
+    print(f"Total videos: {num_of_videos}")

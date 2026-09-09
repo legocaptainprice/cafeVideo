@@ -183,6 +183,11 @@ a {
 
 }
 
+.video-recommendation-board {
+    display: flex;
+    flex-direction: row;
+}
+
 .cafe-video-post-container-margin-bottom {
     margin-bottom: 29px;
 }
@@ -546,6 +551,14 @@ video {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
 }
 
+.cafe-profile-list-contents-buttons {
+    background-color: rgba(72, 82, 112, 0);
+    border-radius: 5px;
+    padding: 10px;
+    border: 2px solid #C78A4B;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+}
+
 .cafe-profile-banner {
     width: 100%;
     height: 300px;
@@ -564,6 +577,21 @@ video {
     margin-right: 1px;
     display: flex;
     flex-direction: row;
+}
+
+.cafe-profile-list-title-modified {
+    margin-bottom: 0px !important;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-list-buttons {
+    display: flex;
+    flex-direction: row;
+    line-height: 0px;
+    margin-bottom: 0px;
+    margin-top: -5px;
+    gap: 20px;
 }
 
 .cafe-profile-list-title-alignment {
