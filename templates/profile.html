@@ -23,7 +23,7 @@
                     <div class="cafe-profile-list-title-unique" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
                         <p>{{ profileDetails[1] }} · {{ num_of_subscribers }} subscriber{{'s' if num_of_subscribers != 1 }}</p>
                         {% if profileDetails[0] == userID %}
-                            <a href="/editProfile" class="cafe-profile-list-settings" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">Settings</a>
+                            <a href="/account/profile/edit" class="cafe-profile-list-settings" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">Settings</a>
                         {% endif %}
                         {% if username %}
                             {% if profileDetails[0] != userID %}

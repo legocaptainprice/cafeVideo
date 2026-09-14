@@ -754,7 +754,7 @@ def likeReplyFromReplierID():
         return redirect(request.referrer)
 
 
-@cafe.route('/editProfile')
+@cafe.route('/account/profile/edit')
 def editUserProfile():
     username = session.get("username")
     userID = session.get("userID")
@@ -765,7 +765,7 @@ def editUserProfile():
 
         cursor.execute("""
                                 SELECT profilePicture, profileBanner, profileColorSets.profilePictureBorderColor, 
-                                channelURLEnabled, channelURL 
+                                channelURLEnabled, channelURL, profileBio, profileColorTheme 
                                 FROM profiles 
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE userID = ?""", (userID,))
@@ -826,7 +826,7 @@ def editUserProfile():
         return redirect(url_for('indexPage'))
 
 
-@cafe.route('/accountSettings')
+@cafe.route('/account/settings')
 def getAccountSettings():
     username = session.get("username")
     userID = session.get("userID")
