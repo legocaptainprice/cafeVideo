@@ -394,52 +394,27 @@ def searchForVideo():
     userID = session.get("userID")
 
     if searchQuery:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        # Fetch the videos with the most views for the search results
-        cursor.execute("""
-                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
-                    FROM videos
-                    JOIN accounts ON videos.userID = accounts.userID
-                    JOIN profiles ON profiles.userID = accounts.userID
-                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                    WHERE videos.videoTitle LIKE ?
-                    ORDER BY views DESC  -- Shows newest first
-                """, (searchQueryForDB,))
-        videos = cursor.fetchall()  # List of tuples
+        videos = sql_commands.fetch_search_results("Regular", searchQueryForDB, "None")
 
         print(videos)
 
         num_of_videos = len(videos)
 
         if username:
-            cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
-                                    channelURLEnabled, channelURL
-                                    FROM profiles 
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE userID = ?""", (userID,))
-            profilePicture = cursor.fetchone()
-            cursor.execute("""
-                                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
-                                                    accounts.userID, accounts.username, channelURLEnabled, channelURL
-                                                    FROM profiles
-                                                    JOIN accounts ON profiles.userID = accounts.userID
-                                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                                    WHERE subscriptions.userID = ?""", (userID,))
-            subscriptionsInfo = cursor.fetchall()
+            profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+            subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
             notifications = sql_commands.fetch_user_notifications("minimal", userID)
-            conn.close()
+            subscription_videos = sql_commands.fetch_search_results("Subscriptions", searchQueryForDB, userID)
+            num_of_subscription_videos = len(subscription_videos)
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
                                    num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
                                    profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                                   notifications=notifications)
+                                   notifications=notifications, subscription_videos=subscription_videos,
+                                   num_of_subscription_videos=num_of_subscription_videos)
         else:
             profilePicture = ["profilepicturetest.png"]
             notifications = []
-            conn.close()
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
                                    num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
                                    profilePicture=profilePicture, notifications=notifications)
@@ -1025,53 +1000,15 @@ def accountSubscriptions():
     userID = session.get("userID")
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        # Fetch the latest videos for the subscriptions feed
-        cursor.execute("""
-                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
-                    FROM videos
-                    JOIN accounts ON videos.userID = accounts.userID
-                    JOIN profiles ON profiles.userID = accounts.userID
-                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                    WHERE subscriptions.userID = ?
-                    ORDER BY videoID DESC  -- Shows newest first
-                """, (userID,))
-        videos = cursor.fetchall()  # List of tuples
+        videos = sql_commands.fetch_subscription_videos("page", userID)
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                channelURL
-                                FROM profiles 
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                accounts.username, channelURLEnabled, channelURL
-                                FROM profiles
-                                JOIN accounts ON profiles.userID = accounts.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
-        conn.close()
         return render_template('subscriptions.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications)

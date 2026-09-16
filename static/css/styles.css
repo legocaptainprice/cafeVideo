@@ -1413,6 +1413,27 @@ video {
     opacity: 0%;
 }
 
+.subscriptions-box-list {
+    border-radius: 5px;
+    border: 2px solid #C78A4B;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    width: 100%;
+    min-height: 80px;
+    display: flex;
+    flex-direction: row;
+}
+
+.subscriptions-box-list-pfp {
+    border: 2px solid #C78A4B;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    width: 65px;
+    height: 65px;
+    border-radius: 5px;
+    margin-left: 5px;
+    margin-top: 5px;
+    gap: 5px;
+}
+
 body, html {
     background-color: #8A7A5E;
     margin: 0;

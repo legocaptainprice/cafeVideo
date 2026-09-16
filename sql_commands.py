@@ -97,11 +97,24 @@ def fetch_subscription_videos(variant, userID):
                                 ORDER BY videoID DESC  -- Shows newest first
                                 LIMIT 12
                                 """, (userID,))
-        subscription_videos = cursor.fetchall()
+    if variant == "page":
+        # Fetch the latest videos for the subscriptions feed
+        cursor.execute("""
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                            FROM videos
+                            JOIN accounts ON videos.userID = accounts.userID
+                            JOIN profiles ON profiles.userID = accounts.userID
+                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                            JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
+                            WHERE subscriptions.userID = ?
+                            ORDER BY videoID DESC  -- Shows newest first
+                        """, (userID,))
 
-        conn.close()
+    subscription_videos = cursor.fetchall()
 
-        return subscription_videos
+    conn.close()
+
+    return subscription_videos
 
 
 def fetch_user_notifications(variant, userID):
@@ -348,3 +361,40 @@ def fetch_video_recommendation_board():
         return video_recommendation_1, video_recommendation_2, video_recommendation_3
 
     print(f"Total videos: {num_of_videos}")
+
+
+def fetch_search_results(searchType, searchQueryForDB, userID):
+    """Fetches videos that match or are related to the search query from the user"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    if searchType == "Regular":
+        # Fetch the videos with the most views for the search results
+        cursor.execute("""
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                            FROM videos
+                            JOIN accounts ON videos.userID = accounts.userID
+                            JOIN profiles ON profiles.userID = accounts.userID
+                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                            WHERE videos.videoTitle LIKE ?
+                            ORDER BY views DESC  -- Shows newest first
+                        """, (searchQueryForDB,))
+        resultsFromSearch = cursor.fetchall()
+        conn.close()
+        return resultsFromSearch
+    if searchType == "Subscriptions":
+        # Fetch the videos with the most views for the search results
+        cursor.execute("""
+                                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                                    FROM videos
+                                    JOIN accounts ON videos.userID = accounts.userID
+                                    JOIN profiles ON profiles.userID = accounts.userID
+                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
+                                    WHERE videos.videoTitle LIKE ? AND subscriptions.userID = ?
+                                    ORDER BY views DESC  -- Shows newest first
+                                """, (searchQueryForDB, userID))
+        resultsFromSearch = cursor.fetchall()
+        conn.close()
+        return resultsFromSearch
+
