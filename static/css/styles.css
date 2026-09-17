@@ -301,11 +301,12 @@ label {
     padding: 10px;
     border-radius: 5px;
     background-color: rgba(0,0,0,0); /* Dark background for contrast */
-    min-height: calc(100vh - 60px);
     overflow-y: auto; /* Enables scrolling if needed */
     display: flex;
     flex-direction: column; /* Stack items vertically */
     gap: 20px; /* Adds space between each item */
+    height: fit-content;
+    max-height: 1400px;
 }
 
 .video-container {
@@ -359,6 +360,11 @@ video {
     flex-direction: row; /* Side-by-side layout */
     align-items: flex-start; /* Aligns content at the top */
     gap: 5px; /* Adds space between each item */
+    justify-content: center !important;
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .cafe-video-content {
@@ -564,6 +570,8 @@ video {
     height: 300px;
     border-radius: 5px;
     background-position: center;
+    object-fit: cover;
+    object-position: center;
 }
 
 .cafe-profile-list-title {
