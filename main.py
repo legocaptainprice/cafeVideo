@@ -63,7 +63,6 @@ def connect_to_database():
 @cafe.route('/')
 def indexPage():
     """The home page for cafeVideo"""
-    conn = connect_to_database()
     username = session.get("username")
     userID = session.get("userID")
 
@@ -81,7 +80,6 @@ def indexPage():
         subscription_videos = sql_commands.fetch_subscription_videos("latest", userID)
 
         notifications = sql_commands.fetch_user_notifications("minimal", userID)
-        conn.close()
         recommended_videos = sql_commands.fetch_user_recommended_feed(userID)
         return render_template('index.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
@@ -89,7 +87,6 @@ def indexPage():
                                notifications=notifications, recommended_videos=recommended_videos)
     else:
         profilePicture = ["profilepicturetest.png"]
-        conn.close()
         return redirect(url_for('explorePage'))
 
 
@@ -187,10 +184,11 @@ def upload():
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
         notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        accountStanding = sql_commands.fetch_account_standing(userID)
 
         return render_template("upload.html", username=username, userID=session.get("userID"),
                                profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, accountStanding=accountStanding)
     else:
         return redirect(url_for('loginPage'))
 
@@ -259,7 +257,9 @@ def watchPage():
         conn = connect_to_database()
         cursor = conn.cursor()
 
-        video = sql_commands.fetch_video_for_watch_page(videoID)
+        video = sql_commands.fetch_video_for_watch_page(videoID)[0]
+
+        accountStanding = sql_commands.fetch_video_for_watch_page(videoID)[1]
 
         print(video)
 
@@ -309,6 +309,7 @@ def watchPage():
 
                 profilePicture = sql_commands.fetch_profile_info("minimal", userID)
                 notifications = sql_commands.fetch_user_notifications("minimal", userID)
+                user_account_standing = sql_commands.fetch_account_standing(userID)
                 print(notifications)
 
                 # Retrieve playlists by the user
@@ -334,6 +335,7 @@ def watchPage():
                 profilePicture = ["profilepicturetest.png"]
                 notifications = []
                 userPlaylists = []
+                user_account_standing = None
                 isVideoSaved = False
 
             return render_template('watch.html', video=video, username=username, videos=videos,
@@ -343,7 +345,8 @@ def watchPage():
                                    isSubscribedToChannel=isSubscribedToChannel, num_of_likes=num_of_likes,
                                    isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago,
                                    profilePicture=profilePicture, notifications=notifications,
-                                   viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved)
+                                   viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved,
+                                   accountStanding=accountStanding, user_account_standing=user_account_standing)
         else:
             return "Video not found", abort(404)
     else:
@@ -447,6 +450,8 @@ def getAccountProfile():
                                 """, (userID,))
             profileDetails = cursor.fetchone()
 
+            accountStanding = sql_commands.fetch_account_standing(userID)
+
             # Fetch the latest videos for the new videos feed
             cursor.execute("""
                                 SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime
@@ -467,45 +472,41 @@ def getAccountProfile():
             num_of_subscribers = len(subscribers)
 
             if username:
-                cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
-                                        channelURLEnabled, channelURL
-                                        FROM profiles 
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        WHERE userID = ?""", (userID_session,))
-                profilePicture = cursor.fetchone()
-                cursor.execute("""
-                                                                    SELECT profilePicture, 
-                                                                    profileColorSets.profilePictureBorderColor, 
-                                                                    accounts.userID, accounts.username, 
-                                                                    channelURLEnabled, channelURL
-                                                                    FROM profiles
-                                                                    JOIN accounts ON profiles.userID = accounts.userID
-                                                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                                                    WHERE subscriptions.userID = ?""",
-                               (userID_session,))
-                subscriptionsInfo = cursor.fetchall()
+                profilePicture = sql_commands.fetch_profile_info("minimal", userID_session)
+                subscriptionsInfo = sql_commands.fetch_subscription_info(userID_session)
 
                 cursor.execute("SELECT * FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
                                (userID_session, userID))
+
                 isSubscribedToChannel = cursor.fetchone()
+
                 if isSubscribedToChannel:
                     isSubscribedToChannel = isSubscribedToChannel[0]
+
                 notifications = sql_commands.fetch_user_notifications("minimal", userID_session)
-                return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
-                                       userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
-                                       num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
-                                       channelID=userID, isSubscribedToChannel=isSubscribedToChannel,
-                                       num_of_videos=num_of_videos, notifications=notifications)
+
+                if accountStanding == "Suspended" and str(userID_session) != str(userID):
+                    return render_template('account_suspended.html', username=username, userID=userID_session,
+                                           profilePicture=profilePicture, notifications=notifications, subscriptionsInfo=subscriptionsInfo)
+                else:
+                    return render_template("profile.html", username=username, profileDetails=profileDetails,
+                                           videos=videos,
+                                           userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
+                                           num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
+                                           channelID=userID, isSubscribedToChannel=isSubscribedToChannel,
+                                           num_of_videos=num_of_videos, notifications=notifications)
 
             else:
                 profilePicture = ["profilepicturetest.png"]
                 notifications = []
-                return render_template("profile.html", username=username, profileDetails=profileDetails, videos=videos,
-                                       userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
-                                       num_of_subscribers=num_of_subscribers, channelID=userID,
-                                       num_of_videos=num_of_videos, notifications=notifications)
+                if accountStanding == "Suspended":
+                    return render_template('account_suspended.html')
+                else:
+                    return render_template("profile.html", username=username, profileDetails=profileDetails,
+                                           videos=videos,
+                                           userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
+                                           num_of_subscribers=num_of_subscribers, channelID=userID,
+                                           num_of_videos=num_of_videos, notifications=notifications)
         else:
             return redirect(url_for("indexPage"))
     else:
@@ -751,52 +752,13 @@ def editUserProfile():
         cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
         profileColorSets = cursor.fetchall()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                accounts.username, channelURLEnabled, channelURL
-                                FROM profiles
-                                JOIN accounts ON profiles.userID = accounts.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        # Fetch the amount of features the user has access to
-        cursor.execute("""
-                        SELECT * 
-                        FROM feature_access
-                        WHERE userID = ?
-                        """, (userID,))
-        userAccessList = cursor.fetchall()
-
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
-
-        if userAccessList:
-            userAccessDisplay = []
-            for userAccess in userAccessList:
-                cursor.execute("""
-                                    SELECT *
-                                    FROM feature_gating
-                                    WHERE featureID = ?
-                                    """, (userAccess[0],))
-                feature = cursor.fetchone()
-                userAccessDisplay.append(feature)
-        else:
-            userAccessDisplay = False
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
-                               userAccessDisplay=userAccessDisplay, notifications=notifications)
+                               notifications=notifications)
     else:
         return redirect(url_for('indexPage'))
 
@@ -821,16 +783,7 @@ def getAccountSettings():
         cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
         profileColorSets = cursor.fetchall()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                accounts.username, channelURLEnabled, channelURL
-                                FROM profiles
-                                JOIN accounts ON profiles.userID = accounts.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
         # Fetch the amount of features the user has access to
         cursor.execute("""
@@ -840,16 +793,9 @@ def getAccountSettings():
                             """, (userID,))
         userAccessList = cursor.fetchall()
 
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+
+        accountStanding = sql_commands.fetch_account_standing(userID)
 
         if userAccessList:
             userAccessDisplay = []
@@ -866,7 +812,8 @@ def getAccountSettings():
 
         return render_template("account_settings.html", username=username, userID=userID, profileInfo=profileInfo,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
-                               userAccessDisplay=userAccessDisplay, notifications=notifications)
+                               userAccessDisplay=userAccessDisplay, notifications=notifications,
+                               accountStanding=accountStanding)
     else:
         return redirect(url_for('indexPage'))
 
@@ -961,27 +908,10 @@ def pageNotFound(error):
     userID = session.get('userID')
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                channelURL
-                                FROM profiles 
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template('404.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications), 404
@@ -1018,59 +948,25 @@ def accountSubscriptions():
 
 @cafe.route('/explore')
 def explorePage():
-    conn = connect_to_database()
-    cursor = conn.cursor()
     username = session.get("username")
     userID = session.get("userID")
 
     # Fetch the latest videos for the new videos feed
-    cursor.execute("""
-                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
-                videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
-                profiles.channelURLEnabled, profiles.channelURL
-                FROM videos
-                JOIN accounts ON videos.userID = accounts.userID
-                JOIN profiles ON profiles.userID = accounts.userID
-                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                ORDER BY videoID DESC  -- Shows newest first
-            """)
-    videos = cursor.fetchall()  # List of tuples
+    videos = sql_commands.fetch_latest_videos()
 
     if username:
-        cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, 
-                                    channelURLEnabled, channelURL
-                                    FROM profiles 
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
-        cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                    accounts.username, channelURLEnabled, channelURL
-                                    FROM profiles
-                                    JOIN accounts ON profiles.userID = accounts.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                    WHERE subscriptions.userID = ?""", (userID,))
-        subscriptionsInfo = cursor.fetchall()
-        print(subscriptionsInfo)
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
+
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
         return render_template('explore.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications)
     else:
         profilePicture = ["profilepicturetest.png"]
         notifications = []
-    conn.close()
     return render_template('explore.html', username=username, videos=videos, userID=userID,
                            time_ago=time_ago, profilePicture=profilePicture, notifications=notifications)
 
@@ -1088,46 +984,22 @@ def likedVideosPage():
         cursor.execute("""
                         SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
                         videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                        profileColorSets.profilePictureBorderColor
+                        profileColorSets.profilePictureBorderColor, accounts.accountStanding
                         FROM videos
                         JOIN accounts ON videos.userID = accounts.userID
                         JOIN profiles ON profiles.userID = accounts.userID
                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                         JOIN likedVideos ON likedVideos.videoID = videos.videoID
-                        WHERE likedVideos.userID = ?
+                        WHERE likedVideos.userID = ? AND accountStanding != 'Suspended'
                         ORDER BY videos.videoID DESC  -- Shows newest first
                     """, (userID,))
         videos = cursor.fetchall()  # List of tuples
 
-        cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                    channelURL
-                                    FROM profiles 
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                    accounts.username, channelURLEnabled, channelURL
-                                    FROM profiles
-                                    JOIN accounts ON profiles.userID = accounts.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                    WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        cursor.execute("""
-                                    SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                    FROM notifications
-                                    JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE notificationRecipientID = ?
-                                    ORDER BY notificationDateTime DESC
-                                                """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         conn.close()
         return render_template('liked_videos.html', username=username, videos=videos, userID=userID,
@@ -1143,43 +1015,15 @@ def watchHistory():
     userID = session.get("userID")
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
         # Fetch the latest videos for the watch history section
         videos = sql_commands.fetch_user_watch_history(userID)
 
-        cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                    channelURL
-                                    FROM profiles 
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                    accounts.username, channelURLEnabled, channelURL
-                                    FROM profiles
-                                    JOIN accounts ON profiles.userID = accounts.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                    WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                """,
-                       (userID,))
-        notifications = cursor.fetchall()
-
-        conn.close()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
         return render_template('history.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications)
@@ -1212,37 +1056,11 @@ def userPlaylist():
                     """, (userID,))
         userPlaylists = cursor.fetchall()  # List of tuples
 
-        print(userPlaylists)
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                        channelURL
-                                        FROM profiles 
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        cursor.execute("""
-                                        SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                        accounts.username, channelURLEnabled, channelURL
-                                        FROM profiles
-                                        JOIN accounts ON profiles.userID = accounts.userID
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                        WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
-
-        cursor.execute("""
-                                    SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                    FROM notifications
-                                    JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE notificationRecipientID = ?
-                                    ORDER BY notificationDateTime DESC
-                                    """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         conn.close()
         return render_template('playlists.html', username=username, userPlaylists=userPlaylists, userID=userID,
@@ -1315,47 +1133,23 @@ def viewPlaylist(playlistID):
 
         print(playlistIDFound[2])
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                        channelURL
-                                        FROM profiles 
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                accounts.username, channelURLEnabled, channelURL
-                                FROM profiles
-                                JOIN accounts ON profiles.userID = accounts.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                WHERE subscriptions.userID = ?""",
-                       (userID,))
-        subscriptionsInfo = cursor.fetchall()
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                            """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         # Fetch the latest videos for the playlist section
         cursor.execute("""
                                 SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
                                 videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                                profileColorSets.profilePictureBorderColor
+                                profileColorSets.profilePictureBorderColor, accounts.accountStanding
                                 FROM videos
                                 JOIN accounts ON videos.userID = accounts.userID
                                 JOIN profiles ON profiles.userID = accounts.userID
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 JOIN playlist_contents ON playlist_contents.videoID = videos.videoID
-                                WHERE playlist_contents.playlistID = ?
+                                WHERE playlist_contents.playlistID = ? AND accounts.accountStanding != 'Suspended'
                                 ORDER BY playlist_contents.videoID DESC  -- Shows newest first
                             """, (playlistID,))
         videos = cursor.fetchall()  # List of tuples
@@ -1384,47 +1178,23 @@ def viewSaves():
 
             print(playlistIDFound[2])
 
-            cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                            channelURL
-                                            FROM profiles 
-                                            JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                            WHERE userID = ?""", (userID,))
-            profilePicture = cursor.fetchone()
+            profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-            cursor.execute("""
-                                    SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                                    accounts.username, channelURLEnabled, channelURL
-                                    FROM profiles
-                                    JOIN accounts ON profiles.userID = accounts.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                    WHERE subscriptions.userID = ?""",
-                           (userID,))
-            subscriptionsInfo = cursor.fetchall()
+            subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-            cursor.execute("""
-                                    SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                    FROM notifications
-                                    JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    WHERE notificationRecipientID = ?
-                                    ORDER BY notificationDateTime DESC
-                                                """,
-                           (userID,))
-            notifications = cursor.fetchall()
+            notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
             # Fetch the latest videos for the playlist section
             cursor.execute("""
                                     SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
                                     videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                                    profileColorSets.profilePictureBorderColor
+                                    profileColorSets.profilePictureBorderColor, accounts.accountStanding
                                     FROM videos
                                     JOIN accounts ON videos.userID = accounts.userID
                                     JOIN profiles ON profiles.userID = accounts.userID
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                     JOIN playlist_contents ON playlist_contents.videoID = videos.videoID
-                                    WHERE playlist_contents.playlistID = ?
+                                    WHERE playlist_contents.playlistID = ? AND accountStanding != 'Suspended'
                                     ORDER BY playlist_contents.videoID DESC  -- Shows newest first
                                 """, (playlistIDFound[0],))
             videos = cursor.fetchall()  # List of tuples
@@ -1450,27 +1220,10 @@ def aboutPage():
     CODENAME = manifest.CODENAME
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, channelURLEnabled, 
-                                channelURL
-                                FROM profiles 
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        cursor.execute("""
-                                SELECT notifications.*, profiles.profilePicture, profileColorSets.profilePictureBorderColor 
-                                FROM notifications
-                                JOIN profiles ON notifications.notificationSenderID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = ?
-                                ORDER BY notificationDateTime DESC
-                                                """,
-                       (userID,))
-        notifications = cursor.fetchall()
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template('about.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications, WEB_TITLE=WEB_TITLE,
@@ -1510,12 +1263,31 @@ def corners_explore():
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
         notifications = sql_commands.fetch_user_notifications("minimal", userID)
-        return render_template('corners.html', username=username, userID=userID,  profilePicture=profilePicture,
+        return render_template('corners.html', username=username, userID=userID, profilePicture=profilePicture,
                                subscriptionsInfo=subscriptionsInfo, featureAccess=featureAccess,
                                notifications=notifications)
     else:
         profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('explorePage'))
+
+
+@cafe.route('/test/template/run')
+def test_template():
+    """This is for testing future and experimental pages"""
+
+    username = session.get('username')
+    userID = session.get('userID')
+
+    if username:
+
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+
+        return render_template('account_suspended.html', username=username, userID=userID,
+                               profilePicture=profilePicture, notifications=notifications)
+    else:
+        return render_template('account_suspended.html')
 
 
 cafe.run(config.ip_address, config.port, debug=config.debug)

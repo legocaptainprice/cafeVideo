@@ -13,6 +13,7 @@
         {% include "components/sidebar.html" %}
         <div class="cafe-video-list-body">
             <div class="cafe-upload-body">
+                {% if accountStanding != 'Suspended' %}
                 <div class="cafe-login-title">
                     <h1>Upload to cafeVideo!</h1>
                 </div>
@@ -30,6 +31,12 @@
                 </form>
                 {% if error %}
                     <p style="color: red">{{error}}</p>
+                {% endif %}
+                {% else %}
+                <div class="account-suspended-box">
+                    <h1>Uploads not available</h1>
+                    <p>Your account has been suspended</p>
+                </div>
                 {% endif %}
             </div>
         </div>

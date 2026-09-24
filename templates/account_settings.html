@@ -129,6 +129,10 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="cafe-account-settings-row-layout">
+                            <p class="cafe-account-settings-title-underline">Account Standing</p>
+                            <h1 class="account-standing-box" style="color: {{ ( '#00FF00' if accountStanding != 'Suspended' else '#D3D3D3') }} !important;">{{ accountStanding }}</h1>
+                        </div>
                     </div>
                 </div>
                 <form action="/" method="POST" class="cafe-login-details" enctype="multipart/form-data">

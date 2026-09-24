@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>cafeVideo</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
+    {% include "components/sidebar.html" %}
+    <div class="cafe-main-body">
+        <div class="cafe-video-list-body">
+            <div class="account-suspended-box">
+                <h1>Account Suspended</h1>
+                <p>This account was suspended as it was found in violation of community guidelines.</p>
+            </div>
+        </div>
+    </div>
+    <!-- Rename to cafeChannels -->
+
+</body>
+</html>

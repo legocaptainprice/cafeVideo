@@ -14,7 +14,7 @@ def createAccount(username, hashed_password):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, hashed_password))
+        cursor.execute("INSERT INTO accounts (username, password, accountStanding, verification) VALUES (?, ?, ?, ?)", (username, hashed_password, "Active", "None"))
         conn.commit()
         cursor.execute("SELECT userID FROM accounts WHERE username = ?", (username,))
         userID = cursor.fetchone()

@@ -14,6 +14,7 @@
             <div class="cafe-video-content">
                 <div class="cafe-video-watch-body">
                     <div class="cafe-watch-body">
+                        {% if accountStanding != 'Suspended' %}
                         <div class="video-container">
                             <video width="960" height="540" controls>
                                 <source src="{{ url_for('static', filename='videos/' + video[5]) }}" type="video/mp4">
@@ -122,11 +123,17 @@
                                 {% include "components/addToPlaylist.html" %}
                             {% endif %}
                         </div>
+                        {% else %}
+                        <div class="video-unavailable-box">
+                            <h1>Video unavailable</h1>
+                        </div>
+                        {% endif %}
                         {% if error %}
                             <p style="color: red">{{error}}</p>
                         {% endif %}
                     </div>
                 </div>
+                {% if accountStanding != 'Suspended' %}
                 <div class="cafe-comment-section-body">
                     <div class="cafe-post-comment">
                         {% if num_of_comments == 1 %}
@@ -135,10 +142,12 @@
                             <h2>Comment Section - {{ num_of_comments }} Comments</h2>
                         {% endif %}
                         {% if username %}
-                        <form action="/postComment" method="POST" class="cafe-comment-form">
-                            <input type="text" name="postComment" placeholder="Comment on this video" class="cafe-comment-box" required>
-                            <button type="submit" class="cafe-comment-button">Comment</button>
-                        </form>
+                            {% if user_account_standing != 'Suspended' %}
+                            <form action="/postComment" method="POST" class="cafe-comment-form">
+                                <input type="text" name="postComment" placeholder="Comment on this video" class="cafe-comment-box" required>
+                                <button type="submit" class="cafe-comment-button">Comment</button>
+                            </form>
+                            {% endif %}
                         {% endif %}
                     </div>
                     <!--
@@ -177,6 +186,7 @@
                     </div>
                     {% endfor %}
                 </div>
+                {% endif %}
             </div>
             <div class="cafe-video-recommendation-list-body">
                 <p class="cafe-video-list-title">Recommended videos</p>

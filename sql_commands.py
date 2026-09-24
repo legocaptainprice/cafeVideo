@@ -25,11 +25,12 @@ def fetch_latest_videos():
     cursor.execute("""
                 SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
                 videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
-                profiles.channelURLEnabled, profiles.channelURL
+                profiles.channelURLEnabled, profiles.channelURL, accounts.accountStanding
                 FROM videos
                 JOIN accounts ON videos.userID = accounts.userID
                 JOIN profiles ON profiles.userID = accounts.userID
                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                WHERE accountStanding != 'Suspended'
                 ORDER BY videoID DESC  -- Shows newest first
             """)
     videos = cursor.fetchall()
@@ -65,12 +66,12 @@ def fetch_subscription_info(userID):
 
     cursor.execute("""
                             SELECT profilePicture, profileColorSets.profilePictureBorderColor, accounts.userID, 
-                            accounts.username, channelURLEnabled, channelURL
+                            accounts.username, channelURLEnabled, channelURL, accounts.accountStanding
                             FROM profiles
                             JOIN accounts ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                            WHERE subscriptions.userID = ?""", (userID,))
+                            WHERE subscriptions.userID = ? AND accountStanding != 'Suspended' """, (userID,))
     subscriptionsInfo = cursor.fetchall()
 
     conn.close()
@@ -93,20 +94,22 @@ def fetch_subscription_videos(variant, userID):
                                 JOIN profiles ON profiles.userID = accounts.userID
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                WHERE subscriptions.userID = ?
+                                WHERE subscriptions.userID = ? AND accountStanding != 'Suspended'
                                 ORDER BY videoID DESC  -- Shows newest first
                                 LIMIT 12
                                 """, (userID,))
     if variant == "page":
         # Fetch the latest videos for the subscriptions feed
         cursor.execute("""
-                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                            videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                            profileColorSets.profilePictureBorderColor, accounts.accountStanding
                             FROM videos
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                            WHERE subscriptions.userID = ?
+                            WHERE subscriptions.userID = ? AND accountStanding != 'Suspended'
                             ORDER BY videoID DESC  -- Shows newest first
                         """, (userID,))
 
@@ -234,13 +237,13 @@ def fetch_user_watch_history(userID):
     cursor.execute("""
                         SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
                         videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                        profileColorSets.profilePictureBorderColor, videos.videoTags
+                        profileColorSets.profilePictureBorderColor, videos.videoTags, accounts.accountStanding
                         FROM videos
                         JOIN accounts ON videos.userID = accounts.userID
                         JOIN profiles ON profiles.userID = accounts.userID
                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                         JOIN watchHistory ON watchHistory.videoID = videos.videoID
-                        WHERE watchHistory.userID = ?
+                        WHERE watchHistory.userID = ? AND accounts.accountStanding != 'Suspended'
                         ORDER BY watchHistory.historyDateTime DESC  -- Shows newest first
                         """, (userID,))
     watchHistory = cursor.fetchall()
@@ -283,12 +286,12 @@ def fetch_user_recommended_feed(userID):
         cursor.execute(f"""
                             SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
                             videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor, 
-                            profiles.channelURLEnabled, profiles.channelURL 
+                            profiles.channelURLEnabled, profiles.channelURL, accounts.accountStanding
                             FROM videos 
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            WHERE {" OR ".join(["(',' || REPLACE(videoTags, ' ', '') || ',') LIKE ?"] * len(top_video_tags))}
+                            WHERE ({" OR ".join(["(',' || REPLACE(videoTags, ' ', '') || ',') LIKE ?"] * len(top_video_tags))}) AND accountStanding != 'Suspended'
                     """, [f"%,{tag.replace(' ', '')},%" for tag in top_video_tags])
         recommended_videos = cursor.fetchall()
     else:
@@ -309,7 +312,15 @@ def fetch_video_for_watch_page(videoID):
                                     WHERE videoID = ?""", (videoID,))
     video = cursor.fetchone()
 
-    return video
+    cursor.execute("""
+                    SELECT accountStanding
+                    FROM videos
+                    JOIN accounts ON accounts.userID = videos.userID
+                    WHERE videoID = ?
+                    """, (videoID,))
+    accountStanding_check = cursor.fetchone()[0]
+
+    return video, accountStanding_check
 
 
 def fetch_comments_section(userID, videoID):
@@ -319,14 +330,15 @@ def fetch_comments_section(userID, videoID):
 
     cursor.execute("""
                             SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, 
-                            profileColorSets.profilePictureBorderColor, comments.userID, 
-                            COUNT(likedComments.commentID) AS likeCount, SUM(likedComments.userID = ?) AS isLikedByUser
+                            profileColorSets.profilePictureBorderColor, comments.userID,
+                            COUNT(likedComments.commentID) AS likeCount, SUM(likedComments.userID = ?) AS isLikedByUser, 
+                            accounts.accountStanding
                             FROM comments
                             JOIN accounts ON comments.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             LEFT JOIN likedComments ON likedComments.commentID = comments.commentID
-                            WHERE comments.videoID = ? 
+                            WHERE comments.videoID = ? AND accountStanding != 'Suspended'
                             GROUP BY comments.commentID
                             ORDER BY comments.commentID DESC 
                             """, (userID, videoID))
@@ -371,12 +383,14 @@ def fetch_search_results(searchType, searchQueryForDB, userID):
     if searchType == "Regular":
         # Fetch the videos with the most views for the search results
         cursor.execute("""
-                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                            SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                            videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                            profileColorSets.profilePictureBorderColor, accounts.accountStanding
                             FROM videos
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            WHERE videos.videoTitle LIKE ?
+                            WHERE videos.videoTitle LIKE ? AND accountStanding != 'Suspended'
                             ORDER BY views DESC  -- Shows newest first
                         """, (searchQueryForDB,))
         resultsFromSearch = cursor.fetchall()
@@ -385,16 +399,29 @@ def fetch_search_results(searchType, searchQueryForDB, userID):
     if searchType == "Subscriptions":
         # Fetch the videos with the most views for the search results
         cursor.execute("""
-                                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime, profiles.profilePicture, profileColorSets.profilePictureBorderColor
+                                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                                    videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                                    profileColorSets.profilePictureBorderColor, accounts.accountStanding
                                     FROM videos
                                     JOIN accounts ON videos.userID = accounts.userID
                                     JOIN profiles ON profiles.userID = accounts.userID
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                     JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                    WHERE videos.videoTitle LIKE ? AND subscriptions.userID = ?
+                                    WHERE videos.videoTitle LIKE ? AND subscriptions.userID = ? AND accountStanding != 'Suspended'
                                     ORDER BY views DESC  -- Shows newest first
                                 """, (searchQueryForDB, userID))
         resultsFromSearch = cursor.fetchall()
         conn.close()
         return resultsFromSearch
+
+
+def fetch_account_standing(userID):
+    """Fetches the account standing for a given userID"""
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT accountStanding FROM accounts WHERE userID = ?", (userID,))
+    accountStanding = cursor.fetchone()[0]
+
+    return accountStanding
 
