@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config, manifest
+import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config, manifest, sqlalchemy
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename

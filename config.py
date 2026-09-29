@@ -4,6 +4,7 @@ port = 5000
 debug = True
 # Database settings
 sqlite_db_path = "cafeDatabase.db"
+sqlalchemy_db_path = "cafeDatabase.db"
 # Security settings
 session_cookie_httponly = True
 session_cookie_secure = False
