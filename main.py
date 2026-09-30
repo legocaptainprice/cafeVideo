@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config, manifest, sqlalchemy
+import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config, manifest, markdown
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from numberSimplifier import viewSimplify
+from sqlalchemy import create_engine, text
 
 cafe = Flask(__name__)
 
@@ -58,6 +59,17 @@ def connect_to_database():
     conn.execute('PRAGMA foreign_keys = ON')
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def read_markdown_files(markdown_file, mode):
+    with open(markdown_file, "r", encoding="utf-8") as file:
+        content = file.read()
+
+        if mode == "markdown":
+            markdown_content = markdown.markdown(content)
+            return markdown_content
+        else:
+            return content
 
 
 @cafe.route('/')
@@ -1218,6 +1230,7 @@ def aboutPage():
     VERSION = f"{manifest.MAJOR}.{manifest.MINOR}.{manifest.PATCH}"
     CHANNEL = manifest.CHANNEL
     CODENAME = manifest.CODENAME
+    COPYRIGHT = manifest.COPYRIGHT
 
     if username:
 
@@ -1227,10 +1240,10 @@ def aboutPage():
 
         return render_template('about.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications, WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL)
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
     else:
         return render_template('about.html', WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL)
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
 
 
 @cafe.route('/saves/add', methods=["POST"])
@@ -1284,10 +1297,82 @@ def test_template():
 
         notifications = sql_commands.fetch_user_notifications("minimal", userID)
 
-        return render_template('account_suspended.html', username=username, userID=userID,
+        return render_template('guidelines.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications)
     else:
-        return render_template('account_suspended.html')
+        return render_template('guidelines.html')
+
+
+@cafe.route('/help/guidelines')
+def guidelines_page():
+    """This is for viewing the platform guidelines"""
+
+    username = session.get('username')
+    userID = session.get('userID')
+
+    markdown_content = read_markdown_files("GUIDELINES.md", "markdown")
+
+    if username:
+
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+
+        return render_template('guidelines.html', username=username, userID=userID,
+                               profilePicture=profilePicture, notifications=notifications,
+                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content)
+    else:
+        return render_template('guidelines.html', markdown_content=markdown_content)
+
+
+@cafe.route('/help/license')
+def license_page():
+    """This is for viewing cafeVideo's license"""
+
+    username = session.get('username')
+    userID = session.get('userID')
+
+    markdown_content = read_markdown_files("LICENSE", "text")
+
+    if username:
+
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+
+        return render_template('license.html', username=username, userID=userID,
+                               profilePicture=profilePicture, notifications=notifications,
+                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content)
+    else:
+        return render_template('license.html', markdown_content=markdown_content)
+
+
+@cafe.route('/help/notice')
+def notice_page():
+    """This is for viewing cafeVideo's notice"""
+
+    username = session.get('username')
+    userID = session.get('userID')
+
+    markdown_content = read_markdown_files("NOTICE", "text")
+
+    if username:
+
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+
+        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+
+        return render_template('notice.html', username=username, userID=userID,
+                               profilePicture=profilePicture, notifications=notifications,
+                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content)
+    else:
+        return render_template('notice.html', markdown_content=markdown_content)
 
 
 cafe.run(config.ip_address, config.port, debug=config.debug)

@@ -237,6 +237,10 @@ label {
     font-family: 'Roboto', sans-serif;
 }
 
+li {
+    font-family: 'Roboto', sans-serif;
+}
+
 .cafe-align-label-input {
     display: flex;
     flex-direction: column;
@@ -1473,6 +1477,19 @@ video {
     flex-direction: column;
     justify-content: center;
     height: 50%;
+    align-items:center;
+}
+
+.help-general-box {
+    background-color: rgba(0, 0, 0, 0);
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    border: 2px solid #C78A4B;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items:center;
 }
 

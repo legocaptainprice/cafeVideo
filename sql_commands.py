@@ -7,8 +7,6 @@ from sqlalchemy import create_engine, text
 from collections import Counter
 
 # Set the location for the database
-cafeDatabasePath = config.sqlite_db_path
-
 DB_engine = create_engine(f"sqlite:///{config.sqlalchemy_db_path}")
 
 

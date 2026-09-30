@@ -6,3 +6,4 @@ PATCH = 0
 CODENAME = "Coral Reef"
 CHANNEL = "alpha"
 GITHUB_LINK = "https://github.com/legocaptainprice/cafeVideo"
+COPYRIGHT = "Copyright © 2025-2026 legocaptainprice"
