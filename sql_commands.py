@@ -130,9 +130,14 @@ def fetch_user_notifications(variant, userID):
                        {"notificationRecipientID": userID})
         notifications = result.fetchall()
 
+        result = conn.execute(text(
+            """SELECT COUNT(*) FROM notifications WHERE notificationRecipientID = :notificationRecipientID"""
+        ), {"notificationRecipientID": userID})
+        notificationsCount = result.fetchall()[0]
+
         conn.close()
 
-        return notifications
+        return notifications, notificationsCount[0]
 
 
 def fetch_account_info(variant, userID):

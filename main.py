@@ -91,12 +91,13 @@ def indexPage():
         # Fetch the latest videos for the subscriptions feed
         subscription_videos = sql_commands.fetch_subscription_videos("latest", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
         recommended_videos = sql_commands.fetch_user_recommended_feed(userID)
         return render_template('index.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                subscription_videos=subscription_videos, featureAccess=featureAccess,
-                               notifications=notifications, recommended_videos=recommended_videos)
+                               notifications=notifications, recommended_videos=recommended_videos,
+                               notificationsCount=notificationsCount)
     else:
         profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('explorePage'))
@@ -195,12 +196,13 @@ def upload():
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
         accountStanding = sql_commands.fetch_account_standing(userID)
 
         return render_template("upload.html", username=username, userID=session.get("userID"),
                                profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, accountStanding=accountStanding)
+                               notifications=notifications, accountStanding=accountStanding,
+                               notificationsCount=notificationsCount)
     else:
         return redirect(url_for('loginPage'))
 
@@ -320,9 +322,8 @@ def watchPage():
                 post.sendWatchedVideoToDatabase(userID, videoID)  # Add video to user's watch history
 
                 profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-                notifications = sql_commands.fetch_user_notifications("minimal", userID)
+                notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
                 user_account_standing = sql_commands.fetch_account_standing(userID)
-                print(notifications)
 
                 # Retrieve playlists by the user
                 # Fetch the playlists created by the user
@@ -346,6 +347,7 @@ def watchPage():
             else:
                 profilePicture = ["profilepicturetest.png"]
                 notifications = []
+                notificationsCount = 0
                 userPlaylists = []
                 user_account_standing = None
                 isVideoSaved = False
@@ -358,7 +360,8 @@ def watchPage():
                                    isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago,
                                    profilePicture=profilePicture, notifications=notifications,
                                    viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved,
-                                   accountStanding=accountStanding, user_account_standing=user_account_standing)
+                                   accountStanding=accountStanding, user_account_standing=user_account_standing,
+                                   notificationsCount=notificationsCount)
         else:
             return "Video not found", abort(404)
     else:
@@ -419,14 +422,15 @@ def searchForVideo():
         if username:
             profilePicture = sql_commands.fetch_profile_info("minimal", userID)
             subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-            notifications = sql_commands.fetch_user_notifications("minimal", userID)
+            notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
             subscription_videos = sql_commands.fetch_search_results("Subscriptions", searchQueryForDB, userID)
             num_of_subscription_videos = len(subscription_videos)
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
                                    num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
                                    profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                    notifications=notifications, subscription_videos=subscription_videos,
-                                   num_of_subscription_videos=num_of_subscription_videos)
+                                   num_of_subscription_videos=num_of_subscription_videos,
+                                   notificationsCount=notificationsCount)
         else:
             profilePicture = ["profilepicturetest.png"]
             notifications = []
@@ -495,18 +499,20 @@ def getAccountProfile():
                 if isSubscribedToChannel:
                     isSubscribedToChannel = isSubscribedToChannel[0]
 
-                notifications = sql_commands.fetch_user_notifications("minimal", userID_session)
+                notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID_session)
 
                 if accountStanding == "Suspended" and str(userID_session) != str(userID):
                     return render_template('account_suspended.html', username=username, userID=userID_session,
-                                           profilePicture=profilePicture, notifications=notifications, subscriptionsInfo=subscriptionsInfo)
+                                           profilePicture=profilePicture, notifications=notifications,
+                                           subscriptionsInfo=subscriptionsInfo, notificationsCount=notificationsCount)
                 else:
                     return render_template("profile.html", username=username, profileDetails=profileDetails,
                                            videos=videos,
                                            userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
                                            num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
                                            channelID=userID, isSubscribedToChannel=isSubscribedToChannel,
-                                           num_of_videos=num_of_videos, notifications=notifications)
+                                           num_of_videos=num_of_videos, notifications=notifications,
+                                           notificationsCount=notificationsCount)
 
             else:
                 profilePicture = ["profilepicturetest.png"]
@@ -766,11 +772,11 @@ def editUserProfile():
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         return redirect(url_for('indexPage'))
 
@@ -805,7 +811,7 @@ def getAccountSettings():
                             """, (userID,))
         userAccessList = cursor.fetchall()
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         accountStanding = sql_commands.fetch_account_standing(userID)
 
@@ -825,7 +831,7 @@ def getAccountSettings():
         return render_template("account_settings.html", username=username, userID=userID, profileInfo=profileInfo,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
                                userAccessDisplay=userAccessDisplay, notifications=notifications,
-                               accountStanding=accountStanding)
+                               accountStanding=accountStanding, notificationsCount=notificationsCount)
     else:
         return redirect(url_for('indexPage'))
 
@@ -923,10 +929,11 @@ def pageNotFound(error):
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template('404.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications), 404
+                               profilePicture=profilePicture, notifications=notifications,
+                               notificationsCount=notificationsCount), 404
     else:
         return render_template('404.html'), 404
 
@@ -949,11 +956,11 @@ def accountSubscriptions():
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template('subscriptions.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         return redirect(url_for('indexPage'))
 
@@ -972,10 +979,11 @@ def explorePage():
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
+
         return render_template('explore.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         profilePicture = ["profilepicturetest.png"]
         notifications = []
@@ -1011,12 +1019,12 @@ def likedVideosPage():
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         conn.close()
         return render_template('liked_videos.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         return redirect(url_for('indexPage'))
 
@@ -1035,10 +1043,11 @@ def watchHistory():
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
+
         return render_template('history.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         return redirect(url_for('indexPage'))
 
@@ -1062,7 +1071,7 @@ def userPlaylist():
                         JOIN profiles ON profiles.userID = accounts.userID
                         JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                         LEFT JOIN playlist_contents ON playlists.playlistID = playlist_contents.playlistID
-                        WHERE playlists.userID = ?
+                        WHERE playlists.userID = ? AND playlistType != "watch_queue"
                         GROUP BY playlists.playlistID
                         ORDER BY playlists.playlistID DESC
                     """, (userID,))
@@ -1072,12 +1081,12 @@ def userPlaylist():
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         conn.close()
         return render_template('playlists.html', username=username, userPlaylists=userPlaylists, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         return redirect(url_for('indexPage'))
 
@@ -1137,7 +1146,7 @@ def viewPlaylist(playlistID):
     conn = connect_to_database()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM playlists WHERE playlistID = ?", (playlistID,))
+    cursor.execute("SELECT * FROM playlists WHERE playlistID = ? AND playlistType != 'watch_queue' ", (playlistID,))
     playlistIDFound = cursor.fetchone()
 
     if playlistIDFound:
@@ -1149,7 +1158,7 @@ def viewPlaylist(playlistID):
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         # Fetch the latest videos for the playlist section
         cursor.execute("""
@@ -1168,7 +1177,8 @@ def viewPlaylist(playlistID):
 
         return render_template('playlist.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, playlistInfo=playlistIDFound, watch_queue=False)
+                               notifications=notifications, playlistInfo=playlistIDFound, watch_queue=False,
+                               notificationsCount=notificationsCount)
     else:
         abort(404)
 
@@ -1194,7 +1204,7 @@ def viewSaves():
 
             subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-            notifications = sql_commands.fetch_user_notifications("minimal", userID)
+            notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
             # Fetch the latest videos for the playlist section
             cursor.execute("""
@@ -1214,7 +1224,8 @@ def viewSaves():
             return render_template('playlist.html', username=username, videos=videos, userID=userID,
                                    time_ago=time_ago, profilePicture=profilePicture,
                                    subscriptionsInfo=subscriptionsInfo,
-                                   notifications=notifications, playlistInfo=playlistIDFound, watch_queue=True)
+                                   notifications=notifications, playlistInfo=playlistIDFound, watch_queue=True,
+                                   notificationsCount=notificationsCount)
         else:
             abort(404)
     else:
@@ -1236,10 +1247,11 @@ def aboutPage():
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template('about.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications, WEB_TITLE=WEB_TITLE,
+                               profilePicture=profilePicture, notifications=notifications,
+                               notificationsCount=notificationsCount, WEB_TITLE=WEB_TITLE,
                                VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
     else:
         return render_template('about.html', WEB_TITLE=WEB_TITLE,
@@ -1275,10 +1287,11 @@ def corners_explore():
             pass
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
+
         return render_template('corners.html', username=username, userID=userID, profilePicture=profilePicture,
                                subscriptionsInfo=subscriptionsInfo, featureAccess=featureAccess,
-                               notifications=notifications)
+                               notifications=notifications, notificationsCount=notificationsCount)
     else:
         profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('explorePage'))
@@ -1295,10 +1308,11 @@ def test_template():
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         return render_template('guidelines.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications)
+                               profilePicture=profilePicture, notifications=notifications,
+                               notificationsCount=notificationsCount)
     else:
         return render_template('guidelines.html')
 
@@ -1316,13 +1330,14 @@ def guidelines_page():
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
         return render_template('guidelines.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
-                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content)
+                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
+                               notificationsCount=notificationsCount)
     else:
         return render_template('guidelines.html', markdown_content=markdown_content)
 
@@ -1340,13 +1355,14 @@ def license_page():
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
         return render_template('license.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
-                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content)
+                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
+                               notificationsCount=notificationsCount)
     else:
         return render_template('license.html', markdown_content=markdown_content)
 
@@ -1364,13 +1380,14 @@ def notice_page():
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
 
-        notifications = sql_commands.fetch_user_notifications("minimal", userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
         return render_template('notice.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
-                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content)
+                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
+                               notificationsCount=notificationsCount)
     else:
         return render_template('notice.html', markdown_content=markdown_content)
 

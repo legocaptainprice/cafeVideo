@@ -43,7 +43,6 @@
         <div class="cafe-sidebar-left">
             <div class="cafe-sidebar-left-contents">
                 <div class="cafe-sidebar-button-contents">
-                    <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Navigation</p>
                     <a href="{{ url_for('indexPage') }}">Home</a>
                     <a href="{{ url_for('explorePage') }}">Explore</a>
                     {% if username %}
@@ -56,6 +55,7 @@
                     <a href="{{ url_for('likedVideosPage') }}">Liked videos</a>
                     <a href="{{ url_for('viewSaves') }}">Saves</a>
                     <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Account Settings</p>
+                    <a href="{{ url_for('getAccountSettings') }}">Account</a>
                     <a href="{{ url_for('editUserProfile') }}">Profile</a>
                     <a href="{{ url_for('logout') }}">Logout</a>
                 </div>
