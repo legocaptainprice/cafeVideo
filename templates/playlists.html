@@ -20,7 +20,6 @@
                             Create
                         </button>
                     </div>
-                    {% include "components/createPlaylist.html" %}
                     <div class="cafe-playlist-content-layout">
                         {% if userPlaylists %}
                         <div class="cafe-playlist-contents">
@@ -48,6 +47,10 @@
                         {% endif %}
                     </div>
                 </div>
+                <div id="focus-screen" class="background-focus hidden">
+
+                </div>
+                {% include "components/createPlaylist.html" %}
             {% endif %}
         </div>
     </div>

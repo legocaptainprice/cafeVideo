@@ -1026,7 +1026,7 @@ def likedVideosPage():
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, notificationsCount=notificationsCount)
     else:
-        return redirect(url_for('indexPage'))
+        return redirect(url_for('loginPage'))
 
 
 @cafe.route("/history/videos")
@@ -1049,7 +1049,7 @@ def watchHistory():
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, notificationsCount=notificationsCount)
     else:
-        return redirect(url_for('indexPage'))
+        return redirect(url_for('loginPage'))
 
 
 @cafe.route('/playlists/videos')
@@ -1088,7 +1088,7 @@ def userPlaylist():
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, notificationsCount=notificationsCount)
     else:
-        return redirect(url_for('indexPage'))
+        return redirect(url_for('loginPage'))
 
 
 @cafe.route('/playlists/create', methods=["POST"])
@@ -1229,7 +1229,7 @@ def viewSaves():
         else:
             abort(404)
     else:
-        return redirect(url_for('indexPage'))
+        return redirect(url_for('loginPage'))
 
 
 @cafe.route('/about')

@@ -65,6 +65,7 @@
     }
 
     overflow-y: scroll;
+    z-index: 1000;
 }
 
 /* Sidebar title */
@@ -1158,9 +1159,9 @@ video {
 
 .cafe-notifications-box {
     background-color: #8A7A5E;
-    border: 2px solid #C78A4B;
+    border: 2px solid #2e1f16;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    margin-right: 2px;
+    margin-top: -2px;
     width: 440px;
     height: 440px;
     position: fixed;
@@ -1201,6 +1202,7 @@ video {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    margin-bottom: 12px;
 }
 
 .cafe-notifications-box-body-item {
@@ -1277,20 +1279,22 @@ video {
     background-color: #8A7A5E;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    margin-right: -7px;
-    width: 440px;
+    border-radius: 5px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin-left: 100px;
+    width: 840px;
     height: 440px;
-    float: right;
-    right: 29px;
     display: block;
     text-align: left;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
     overflow: auto;
-    margin-top: -15px;
     color: White;
-    position: absolute;
+    position: fixed;
     z-index: 1000;
+    &::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 .cafe-playlist-create-box.hidden {
@@ -1493,8 +1497,31 @@ video {
     align-items:center;
 }
 
+.background-focus {
+    background-color: #2e1f16;
+    opacity: 0.5;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    width: 100%;
+    height: 100%;
+    animation: fadeIn 0.1s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 0.5;
+    }
+}
+
 body, html {
     background-color: #8A7A5E;
     margin: 0;
     padding: 0;
+    &::-webkit-scrollbar {
+        display: none;
+    }
 }
