@@ -97,42 +97,49 @@
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-video-list-contents-trending {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-video-list-contents-new {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-video-list-contents-subscriptions {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-video-list-contents-liked-videos {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-video-list-contents-search {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-video-list-contents-search-subscriptions {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;
     padding: 10px;
+    animation: fadeIn 0.1s ease-in;
 }
 
 a {
@@ -552,6 +559,7 @@ video {
     padding: 10px;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-profile-list-contents-videos {
@@ -560,6 +568,7 @@ video {
     padding: 10px;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-profile-list-contents-buttons {
@@ -568,6 +577,7 @@ video {
     padding: 10px;
     border: 2px solid #C78A4B;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-profile-banner {
@@ -1177,6 +1187,8 @@ video {
     }
 
     overflow-y: scroll;
+
+    animation: fadeIn 0.05s ease-in;
 }
 
 .hidden {
@@ -1295,6 +1307,7 @@ video {
     &::-webkit-scrollbar {
         display: none;
     }
+    animation: fadeIn 0.1s ease-in;
 }
 
 .cafe-playlist-create-box.hidden {
@@ -1495,6 +1508,7 @@ video {
     flex-direction: column;
     justify-content: center;
     align-items:center;
+    animation: fadeIn 0.1s ease-in;
 }
 
 .background-focus {
@@ -1515,6 +1529,18 @@ video {
     to {
         opacity: 0.5;
     }
+}
+
+.cafe-profile-navigation-buttons {
+    height: 32px;
+    border-radius: 5px;
+    background-color: rgba(0,0,0,0);
+    opacity: 1.0;
+    margin-right: 5px;
+    color: white;
+    margin: 0;
+    gap: 5px;
+    border: none;
 }
 
 body, html {

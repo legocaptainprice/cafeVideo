@@ -66,15 +66,15 @@
             <div class="cafe-profile-list-contents-buttons" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                     <div class="cafe-profile-list-title cafe-profile-list-title-modified" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
                         <div class="profile-list-buttons">
-                            <p>Videos</p>
-                            <p>Playlists</p>
-                            <p>Recommended</p>
-                            <p>Ratings</p>
-                            <p>Comments</p>
+                            <button id="profileVideosButton" class="cafe-profile-navigation-buttons cafe-hover-element">Videos</button>
+                            <button id="profilePlaylistsButton" class="cafe-profile-navigation-buttons cafe-hover-element">Playlists</button>
+                            <button id="profileRecommendedButton" class="cafe-profile-navigation-buttons cafe-hover-element">Recommended</button>
+                            <button id="profileRatingsButton" class="cafe-profile-navigation-buttons cafe-hover-element">Ratings</button>
+                            <button id="profileCommentsButton" class="cafe-profile-navigation-buttons cafe-hover-element">Comments</button>
                         </div>
                     </div>
             </div>
-            <div class="cafe-profile-list-contents-videos" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
+            <div id="profileVideos" class="cafe-profile-list-contents-videos" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                 <div class="cafe-profile-list-title" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
                     <p class="cafe-profile-list-title-alignment">{{ profileDetails[1] }}'s Videos</p>
                     <p class="cafe-profile-list-title-alignment cafe-profile-list-title-videos-number-alignment">{{ num_of_videos }} videos</p>
@@ -102,6 +102,26 @@
                         </div>
                     </a>
                     {% endfor %}
+                </div>
+            </div>
+            <div id="profilePlaylists" class="cafe-profile-list-contents-videos hidden" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
+                <div class="cafe-profile-list-title" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
+                    <p class="cafe-profile-list-title-alignment">{{ profileDetails[1] }}'s Playlists</p>
+                </div>
+            </div>
+            <div id="profileRecommended" class="cafe-profile-list-contents-videos hidden" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
+                <div class="cafe-profile-list-title" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
+                    <p class="cafe-profile-list-title-alignment">{{ profileDetails[1] }}'s Recommended</p>
+                </div>
+            </div>
+            <div id="profileRatings" class="cafe-profile-list-contents-videos hidden" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
+                <div class="cafe-profile-list-title" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
+                    <p class="cafe-profile-list-title-alignment">{{ profileDetails[1] }}'s Channel Rating</p>
+                </div>
+            </div>
+            <div id="profileComments" class="cafe-profile-list-contents-videos hidden" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
+                <div class="cafe-profile-list-title" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
+                    <p class="cafe-profile-list-title-alignment">{{ profileDetails[1] }}'s Comments Section</p>
                 </div>
             </div>
             <!--
