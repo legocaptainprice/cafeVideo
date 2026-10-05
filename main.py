@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, createAccount, post, os, modifyAccount, sql_commands, config, manifest, markdown
+import sqlite3, post, os, sql_commands, config, manifest, markdown
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -168,7 +168,7 @@ def registerAccountAPI():
     hashed_password = generate_password_hash(password)
 
     # Call the createAccount function and create the account with the username and hashed password
-    success, message = createAccount.createAccount(username, hashed_password)
+    success, message = sql_commands.createAccount(username, hashed_password)
 
     if success:
         session['username'] = username
@@ -846,7 +846,7 @@ def confirmAccountDetailsEdit():
         username = request.form["usernameEdit"]
         channelURL = request.form["channelURL"]
 
-        success, message = modifyAccount.changeAccountDetailsConfirm(userID, username, channelURL)
+        success, message = sql_commands.changeAccountDetailsConfirm(userID, username, channelURL)
 
         if success:
             session['username'] = username  # Store username in session

@@ -4,10 +4,14 @@ import random
 
 from sqlalchemy import create_engine, text
 
+from sqlalchemy.exc import IntegrityError
+
 from collections import Counter
 
+from datetime import datetime
+
 # Set the location for the database
-DB_engine = create_engine(f"sqlite:///{config.sqlalchemy_db_path}")
+DB_engine = create_engine(config.sqlalchemy_db_path)
 
 
 def connect_to_database():
@@ -66,7 +70,8 @@ def fetch_subscription_info(userID):
                             JOIN accounts ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                             JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                            WHERE subscriptions.userID = :userID AND accountStanding != 'Suspended' """), {"userID": userID})
+                            WHERE subscriptions.userID = :userID AND accountStanding != 'Suspended' """),
+                          {"userID": userID})
     subscriptionsInfo = result.fetchall()
 
     conn.close()
@@ -127,7 +132,7 @@ def fetch_user_notifications(variant, userID):
                                 WHERE notificationRecipientID = :notificationRecipientID
                                 ORDER BY notificationDateTime DESC
                                          """),
-                       {"notificationRecipientID": userID})
+                              {"notificationRecipientID": userID})
         notifications = result.fetchall()
 
         result = conn.execute(text(
@@ -165,27 +170,30 @@ def fetch_user_playlist_info(variant, userID, videoID, playlistID):
 
     if variant == "add":
         # Check if playlist exists and if it was made by the user
-        result = conn.execute(text("SELECT * FROM playlists WHERE playlistID = :playlistID AND userID = :userID"), {"playlistID": playlistID, "userID": userID})
+        result = conn.execute(text("SELECT * FROM playlists WHERE playlistID = :playlistID AND userID = :userID"),
+                              {"playlistID": playlistID, "userID": userID})
         playlistExists = result.fetchone()
 
         if playlistExists:
             print(f"Playlist {playlistID} Found!")
             # Check if video is already in playlist
-            result = conn.execute(text("SELECT * FROM playlist_contents WHERE playlistID = :playlistID AND videoID = :videoID"),
-                           {"playlistID": playlistID, "videoID": videoID})
+            result = conn.execute(
+                text("SELECT * FROM playlist_contents WHERE playlistID = :playlistID AND videoID = :videoID"),
+                {"playlistID": playlistID, "videoID": videoID})
             videoInPlaylist = result.fetchone()
 
             if videoInPlaylist:
                 # If the video is already in the playlist then remove it from the playlist
-                conn.execute(text("DELETE FROM playlist_contents WHERE playlistID = :playlistID AND videoID = :videoID"),
-                               {"playlistID": playlistID, "videoID": videoID})
+                conn.execute(
+                    text("DELETE FROM playlist_contents WHERE playlistID = :playlistID AND videoID = :videoID"),
+                    {"playlistID": playlistID, "videoID": videoID})
                 conn.commit()
                 print("Video removed from playlist")
                 conn.close()
             else:
                 # If the video is not in the playlist then add it to the playlist
                 conn.execute(text("INSERT INTO playlist_contents (playlistID, videoID) VALUES (:playlistID, :videoID)"),
-                               {"playlistID": playlistID, "videoID": videoID})
+                             {"playlistID": playlistID, "videoID": videoID})
                 conn.commit()
                 print("Video added to playlist")
                 conn.close()
@@ -198,7 +206,8 @@ def add_to_user_saved_videos(userID, videoID):
     """Adds the video the user requested to save to the saved videos playlist"""
     conn = connect_to_database()
 
-    result = conn.execute(text("SELECT * FROM playlists WHERE userID = :userID and playlistType = :playlistType"), {"userID": userID, "playlistType": "watch_queue"})
+    result = conn.execute(text("SELECT * FROM playlists WHERE userID = :userID and playlistType = :playlistType"),
+                          {"userID": userID, "playlistType": "watch_queue"})
     userSavedVideos = result.fetchone()
 
     fetch_user_playlist_info("add", userID, videoID, userSavedVideos[0])
@@ -209,11 +218,13 @@ def fetch_watch_page_details(variant, userID, videoID):
     conn = connect_to_database()
 
     if variant == "saves":
-        result = conn.execute(text("SELECT * FROM playlists WHERE userID = :userID and playlistType = :playlistType"), {"userID": userID, "playlistType": "watch_queue"})
+        result = conn.execute(text("SELECT * FROM playlists WHERE userID = :userID and playlistType = :playlistType"),
+                              {"userID": userID, "playlistType": "watch_queue"})
         userSavedVideos = result.fetchone()  # Retrieve the playlist where saved videos are stored
 
-        result = conn.execute(text("SELECT * FROM playlist_contents WHERE playlistID = :playlistID AND videoID = :videoID"),
-                       {"playlistID": userSavedVideos[0], "videoID": videoID})
+        result = conn.execute(
+            text("SELECT * FROM playlist_contents WHERE playlistID = :playlistID AND videoID = :videoID"),
+            {"playlistID": userSavedVideos[0], "videoID": videoID})
         isVideoSaved = result.fetchone()
 
         if isVideoSaved:
@@ -358,15 +369,15 @@ def fetch_video_recommendation_board():
         video_recommendation_3_randomizer = random.randint(1, num_of_videos)
 
         result = conn.execute(text("SELECT * FROM videos WHERE videoID = :videoID"),
-                                   {"videoID": video_recommendation_1_randomizer})
+                              {"videoID": video_recommendation_1_randomizer})
         video_recommendation_1 = result.fetchone()
 
         result = conn.execute(text("SELECT * FROM videos WHERE videoID = :videoID"),
-                                   {"videoID": video_recommendation_2_randomizer})
+                              {"videoID": video_recommendation_2_randomizer})
         video_recommendation_2 = result.fetchone()
 
         result = conn.execute(text("SELECT * FROM videos WHERE videoID = :videoID"),
-                                   {"videoID": video_recommendation_3_randomizer})
+                              {"videoID": video_recommendation_3_randomizer})
         video_recommendation_3 = result.fetchone()
 
         return video_recommendation_1, video_recommendation_2, video_recommendation_3
@@ -423,3 +434,146 @@ def fetch_account_standing(userID):
     return accountStanding
 
 
+def createAccount(username, hashed_password):
+    conn = connect_to_database()
+
+    try:
+        # Insert the account information for the newly created user account
+        conn.execute(text("""INSERT INTO accounts 
+                            (username, password, accountStanding, verification)
+                            VALUES (:username, :password, :accountStanding, :verification)"""),
+                     {
+                         "username": username,
+                         "password": hashed_password,
+                         "accountStanding": "Active",
+                         "verification": "None"
+                     }
+                     )
+        conn.commit()
+        # Fetch the userID of that newly created account to use for more inserts
+        result = conn.execute(text("""SELECT userID 
+                                      FROM accounts 
+                                      WHERE username = :username"""),
+                              {"username": username})
+        userID = result.fetchone()
+        joinDate = datetime.today()
+        formatted_joinDate = joinDate.strftime("%d/%m/%Y")
+        # Create the profile for the user account
+        conn.execute(text("""INSERT INTO profiles 
+                            (userID, joinDate, profileColorTheme, channelURLEnabled, channelURL)
+                            VALUES (:userID, :joinDate, :profileColorTheme, :channelURLEnabled, :channelURL)"""),
+                     {
+                         "userID": userID[0],
+                         "joinDate": formatted_joinDate,
+                         "profileColorTheme": 5,
+                         "channelURLEnabled": 0,
+                         "channelURL": username
+                     }
+                     )
+        conn.commit()
+        # Create the saved videos playlist for the user account
+        conn.execute(text("""INSERT INTO playlists 
+                            (userID, playlistName, playlistType, visibilityType) 
+                            VALUES (:userID, :playlistName, :playlistType, :visibilityType)"""),
+                     {
+                         "userID": userID[0],
+                         "playlistName": f"{username}'s Saved Videos",
+                         "playlistType": "watch_queue",
+                         "visibilityType": "Private"
+                     }
+                     )
+        conn.commit()
+        print("Account created")
+        return True, "Account created successfully!"  # Return success message
+    except IntegrityError:
+        return False, "Username already exists"  # Return error message
+    finally:
+        conn.close()
+
+
+def changeAccountDetailsConfirm(userID, username, channelURL):
+    """This is for changing account details e.g. username, channel URL, etc"""
+    conn = connect_to_database()
+
+    try:
+        conn.execute(text("""UPDATE accounts 
+                             SET username = :username 
+                             WHERE userID = :userID"""),
+                     {
+                         "username": username,
+                         "userID": userID
+                     }
+                     )
+        conn.commit()
+        # Check if channelURL is enabled
+        result = conn.execute(text("""SELECT channelURLEnabled 
+                                      FROM profiles 
+                                      WHERE userID = :userID"""),
+                              {
+                                  "userID": userID
+                              }
+                              )
+        channelURLStatus = result.fetchone()
+        print(channelURLStatus[0])
+        # Check if new channelURL does not already exist
+        result = conn.execute(text("""SELECT channelURL 
+                                      FROM profiles 
+                                      WHERE UPPER(channelURL) = UPPER(:channelURL)"""),
+                              {
+                                  "channelURL": channelURL
+                              }
+                              )
+        channelURLExist = result.fetchone()
+        print(channelURLExist)
+        # If the channelURL does not exist then update the user's channelURL
+        if not channelURLExist:
+            conn.execute(text("""UPDATE profiles 
+                                 SET channelURL = :channelURL 
+                                 WHERE userID = :userID"""),
+                         {
+                             "channelURL": channelURL,
+                             "userID": userID
+                         }
+                         )
+            conn.commit()
+            # Enable channelURL if its not enabled
+            if channelURLStatus[0] == 0:
+                conn.execute(text("""UPDATE profiles 
+                                     SET channelURLEnabled = :channelURLEnabled 
+                                     WHERE userID = :userID"""),
+                             {
+                                 "channelURLEnabled": 1,
+                                 "userID": userID
+                             }
+                             )
+                conn.commit()
+        else:
+            print(f"Channel URL, {channelURLExist}, already exists")
+            # If the channelURL does exist and the channelURL is not enabled
+            if channelURLStatus[0] == 0:
+                result = conn.execute(text("""SELECT * 
+                                          FROM profiles 
+                                          WHERE UPPER(channelURL) = UPPER(:channelURL) AND userID = :userID"""),
+                                      {
+                                          "channelURL": channelURL,
+                                          "userID": userID
+                                      }
+                                      )
+                # Check if the channelURL matches the userID of the user saving the changes
+                channelURL_Matches_UserID = result.fetchone()
+                # Enable channelURL if its not enabled
+                if channelURL_Matches_UserID:
+                    conn.execute(text("""UPDATE profiles 
+                                              SET channelURLEnabled = :channelURLEnabled 
+                                              WHERE userID = :userID"""),
+                                 {
+                                     "channelURLEnabled": 1,
+                                     "userID": userID
+                                 }
+                                 )
+                    conn.commit()
+        return True, "Account details updated successfully"
+    except IntegrityError:
+        return False, "Account details failed to update"
+    finally:
+        conn.close()
