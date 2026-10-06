@@ -1,0 +1,4 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+{% if season_state %}
+    <link rel="stylesheet" href="{{ url_for('static', filename=season[2] + '/event.css') }}">
+{% endif %}

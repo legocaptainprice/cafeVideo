@@ -1,0 +1,175 @@
+.cafe-header-navbar {
+    background-color: #302033;
+}
+
+.cafe-notifications-box {
+    border: 2px solid #302033;
+    background-color: #241C19;
+}
+
+.cafe-sidebar-left {
+    background-color: #1b2538;
+}
+
+.cafe-video-list-body {
+    background-color: #241C19;
+}
+
+body, html {
+    background-color: #241C19;
+}
+
+a {
+    background-color: #fb702d;
+}
+
+.cafe-watch-layout-body {
+    background-color: #241C19;
+}
+
+.cafe-video-list-title {
+    background-color: #fb702d;
+}
+
+h1, h2, h3 {
+    color: White;
+}
+
+p {
+    color: White;
+}
+
+.cafe-video-post-thumbnail-border {
+    border: 2px solid #88e032;
+}
+
+.cafe-notifications-box-header-title {
+    background-color: #fb702d;
+}
+
+.cafe-notifications-box-body-item {
+    border: 2px solid #88e032;
+    background-color: #1b2538;
+}
+
+.subscriptions-box-list {
+    border: 2px solid #88e032;
+}
+
+.cafe-playlists-header-title {
+    background-color: #fb702d;
+}
+
+.cafe-playlists-contents-box {
+    border: 2px solid #88e032;
+}
+
+.cafe-comment-button {
+    background-color: #fb702d;
+}
+
+.cafe-upload-button {
+    background-color: #fb702d;
+}
+
+.cafe-comment-box {
+    background-color: rgba(55, 48, 56, 0.5);
+}
+
+.cafe-watch-body {
+    border: 2px solid #88e032;
+}
+
+.cafe-watch-video-stats {
+    border: 2px solid #88e032;
+}
+
+.cafe-align-watch-description {
+    border: 2px solid #88e032;
+}
+
+.cafe-comment-section-body {
+    border: 2px solid #88e032;
+}
+
+.cafe-comment-layout-box {
+    border: 2px solid #88e032;
+    background-color: #1b2538;
+}
+
+.cafe-comment-likes {
+    border: 2px solid #88e032;
+}
+
+.cafe-box-shadow-other {
+    border: 2px solid #88e032;
+}
+
+.cafe-edit-bio-box {
+    border: 2px solid #88e032;
+}
+
+input[type="radio"]:checked {
+  accent-color: #9d0000;
+}
+
+.cafe-account-settings-user-content {
+    border: 2px solid #88e032;
+}
+
+.cafe-account-settings-row-layout {
+    border: 2px solid #88e032;
+}
+
+.cafe-feature-gating-content {
+    border: 2px solid #88e032;
+    background-color: #1b2538;
+}
+
+.cafe-modify-details-box {
+    background-color: #373038;
+}
+
+.cafe-account-settings-sidebar-title-layout {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-account-settings-title-underline {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-watch-description-title {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-watch-video-tags-title {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-watch-video-tags-title {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-addToPlaylist-box {
+    border: 2px solid #88e032;
+}
+
+.cafe-comment-box:focus {
+    background-color: rgba(55, 48, 56, 1);
+}
+
+.cafe-watch-views-title-underline {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-watch-likes-title-underline {
+    border-bottom: 2px solid #9d0000;
+}
+
+.cafe-watch-video-stats-vertical-divider {
+    border: 1px solid #9d0000;
+}
+
+.help-general-box {
+    border: 2px solid #88e032;
+}

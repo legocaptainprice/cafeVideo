@@ -213,6 +213,7 @@ def add_to_user_saved_videos(userID, videoID):
     fetch_user_playlist_info("add", userID, videoID, userSavedVideos[0])
 
 
+# This needs more explaining
 def fetch_watch_page_details(variant, userID, videoID):
     """Fetches the necessary details from the database for the watch page for the selected video"""
     conn = connect_to_database()
@@ -577,3 +578,23 @@ def changeAccountDetailsConfirm(userID, username, channelURL):
         return False, "Account details failed to update"
     finally:
         conn.close()
+
+
+def fetch_season_state():
+    conn = connect_to_database()
+
+    result = conn.execute(text("SELECT * FROM season"))
+    seasonState = result.fetchone()
+
+    if seasonState[0] == 1:
+        result = conn.execute(text("""SELECT * 
+                                      FROM events 
+                                      WHERE eventID = :eventID"""),
+                              {"eventID": seasonState[1]
+                               }
+                              )
+        event_data = result.fetchone()
+
+        return event_data, seasonState[0]
+    else:
+        return "None", seasonState[0]

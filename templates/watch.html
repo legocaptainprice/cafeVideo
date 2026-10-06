@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% include "components/css.html" %}
     <title>cafeVideo - {{ video[2] }}</title>
     {% include "components/scripts.html" %}
 </head>

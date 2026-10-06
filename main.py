@@ -80,6 +80,14 @@ def indexPage():
 
     videos = sql_commands.fetch_latest_videos()
 
+    season, season_state = sql_commands.fetch_season_state()
+
+    if season_state == 1:
+        print("Active")
+        print(season)
+    else:
+        print("Inactive")
+
     if username:
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
         featureAccess = sql_commands.fetch_account_info("feature_access", userID)
@@ -97,7 +105,7 @@ def indexPage():
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                subscription_videos=subscription_videos, featureAccess=featureAccess,
                                notifications=notifications, recommended_videos=recommended_videos,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
         profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('explorePage'))
@@ -112,10 +120,12 @@ def loginPage():
 
     sql_commands.fetch_video_recommendation_board()
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
         return redirect(url_for("indexPage"))
     else:
-        return render_template('login.html', page_type=page_type)
+        return render_template('login.html', page_type=page_type, season=season, season_state=season_state)
 
 
 @cafe.route('/register')
@@ -127,10 +137,12 @@ def registerPage():
 
     sql_commands.fetch_video_recommendation_board()
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
         return redirect(url_for("indexPage"))
     else:
-        return render_template('login.html', page_type=page_type)
+        return render_template('login.html', page_type=page_type, season=season, season_state=season_state)
 
 
 @cafe.route('/loginAuth', methods=['GET', 'POST'])
@@ -198,11 +210,12 @@ def upload():
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
         accountStanding = sql_commands.fetch_account_standing(userID)
+        season, season_state = sql_commands.fetch_season_state()
 
         return render_template("upload.html", username=username, userID=session.get("userID"),
                                profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, accountStanding=accountStanding,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
         return redirect(url_for('loginPage'))
 
@@ -317,6 +330,7 @@ def watchPage():
                 isLikedVideo = isLikedVideo[0]
             timestamp = int(video[6])
             datePublished = getVideoDatetime(timestamp)
+            season, season_state = sql_commands.fetch_season_state()
 
             if username:
                 post.sendWatchedVideoToDatabase(userID, videoID)  # Add video to user's watch history
@@ -361,7 +375,7 @@ def watchPage():
                                    profilePicture=profilePicture, notifications=notifications,
                                    viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved,
                                    accountStanding=accountStanding, user_account_standing=user_account_standing,
-                                   notificationsCount=notificationsCount)
+                                   notificationsCount=notificationsCount, season=season, season_state=season_state)
         else:
             return "Video not found", abort(404)
     else:
@@ -419,6 +433,8 @@ def searchForVideo():
 
         num_of_videos = len(videos)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         if username:
             profilePicture = sql_commands.fetch_profile_info("minimal", userID)
             subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
@@ -430,13 +446,13 @@ def searchForVideo():
                                    profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                    notifications=notifications, subscription_videos=subscription_videos,
                                    num_of_subscription_videos=num_of_subscription_videos,
-                                   notificationsCount=notificationsCount)
+                                   notificationsCount=notificationsCount, season=season, season_state=season_state)
         else:
             profilePicture = ["profilepicturetest.png"]
             notifications = []
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
                                    num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
-                                   profilePicture=profilePicture, notifications=notifications)
+                                   profilePicture=profilePicture, notifications=notifications, season=season, season_state=season_state)
 
     else:
         return redirect(url_for("indexPage"))
@@ -487,6 +503,8 @@ def getAccountProfile():
             subscribers = cursor.fetchall()
             num_of_subscribers = len(subscribers)
 
+            season, season_state = sql_commands.fetch_season_state()
+
             if username:
                 profilePicture = sql_commands.fetch_profile_info("minimal", userID_session)
                 subscriptionsInfo = sql_commands.fetch_subscription_info(userID_session)
@@ -504,7 +522,8 @@ def getAccountProfile():
                 if accountStanding == "Suspended" and str(userID_session) != str(userID):
                     return render_template('account_suspended.html', username=username, userID=userID_session,
                                            profilePicture=profilePicture, notifications=notifications,
-                                           subscriptionsInfo=subscriptionsInfo, notificationsCount=notificationsCount)
+                                           subscriptionsInfo=subscriptionsInfo, notificationsCount=notificationsCount,
+                                           season=season, season_state=season_state)
                 else:
                     return render_template("profile.html", username=username, profileDetails=profileDetails,
                                            videos=videos,
@@ -512,7 +531,8 @@ def getAccountProfile():
                                            num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
                                            channelID=userID, isSubscribedToChannel=isSubscribedToChannel,
                                            num_of_videos=num_of_videos, notifications=notifications,
-                                           notificationsCount=notificationsCount)
+                                           notificationsCount=notificationsCount,
+                                           season=season, season_state=season_state)
 
             else:
                 profilePicture = ["profilepicturetest.png"]
@@ -524,7 +544,8 @@ def getAccountProfile():
                                            videos=videos,
                                            userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
                                            num_of_subscribers=num_of_subscribers, channelID=userID,
-                                           num_of_videos=num_of_videos, notifications=notifications)
+                                           num_of_videos=num_of_videos, notifications=notifications,
+                                           season=season, season_state=season_state)
         else:
             return redirect(url_for("indexPage"))
     else:
@@ -774,9 +795,12 @@ def editUserProfile():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         return redirect(url_for('indexPage'))
 
@@ -815,6 +839,8 @@ def getAccountSettings():
 
         accountStanding = sql_commands.fetch_account_standing(userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         if userAccessList:
             userAccessDisplay = []
             for userAccess in userAccessList:
@@ -831,7 +857,8 @@ def getAccountSettings():
         return render_template("account_settings.html", username=username, userID=userID, profileInfo=profileInfo,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
                                userAccessDisplay=userAccessDisplay, notifications=notifications,
-                               accountStanding=accountStanding, notificationsCount=notificationsCount)
+                               accountStanding=accountStanding, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         return redirect(url_for('indexPage'))
 
@@ -925,6 +952,8 @@ def pageNotFound(error):
     username = session.get('username')
     userID = session.get('userID')
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
@@ -933,9 +962,9 @@ def pageNotFound(error):
 
         return render_template('404.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
-                               notificationsCount=notificationsCount), 404
+                               notificationsCount=notificationsCount, season=season, season_state=season_state), 404
     else:
-        return render_template('404.html'), 404
+        return render_template('404.html', season=season, season_state=season_state), 404
 
 
 @cafe.errorhandler(405)
@@ -958,9 +987,12 @@ def accountSubscriptions():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         return render_template('subscriptions.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         return redirect(url_for('indexPage'))
 
@@ -973,6 +1005,8 @@ def explorePage():
     # Fetch the latest videos for the new videos feed
     videos = sql_commands.fetch_latest_videos()
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
@@ -983,12 +1017,14 @@ def explorePage():
 
         return render_template('explore.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         profilePicture = ["profilepicturetest.png"]
         notifications = []
     return render_template('explore.html', username=username, videos=videos, userID=userID,
-                           time_ago=time_ago, profilePicture=profilePicture, notifications=notifications)
+                           time_ago=time_ago, profilePicture=profilePicture, notifications=notifications, season=season,
+                           season_state=season_state)
 
 
 @cafe.route("/likes/videos")
@@ -1021,10 +1057,13 @@ def likedVideosPage():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         conn.close()
         return render_template('liked_videos.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         return redirect(url_for('loginPage'))
 
@@ -1045,9 +1084,12 @@ def watchHistory():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         return render_template('history.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         return redirect(url_for('loginPage'))
 
@@ -1083,10 +1125,13 @@ def userPlaylist():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         conn.close()
         return render_template('playlists.html', username=username, userPlaylists=userPlaylists, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         return redirect(url_for('loginPage'))
 
@@ -1160,6 +1205,8 @@ def viewPlaylist(playlistID):
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         # Fetch the latest videos for the playlist section
         cursor.execute("""
                                 SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
@@ -1178,7 +1225,7 @@ def viewPlaylist(playlistID):
         return render_template('playlist.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, playlistInfo=playlistIDFound, watch_queue=False,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
         abort(404)
 
@@ -1206,6 +1253,8 @@ def viewSaves():
 
             notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+            season, season_state = sql_commands.fetch_season_state()
+
             # Fetch the latest videos for the playlist section
             cursor.execute("""
                                     SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
@@ -1225,7 +1274,7 @@ def viewSaves():
                                    time_ago=time_ago, profilePicture=profilePicture,
                                    subscriptionsInfo=subscriptionsInfo,
                                    notifications=notifications, playlistInfo=playlistIDFound, watch_queue=True,
-                                   notificationsCount=notificationsCount)
+                                   notificationsCount=notificationsCount, season=season, season_state=season_state)
         else:
             abort(404)
     else:
@@ -1243,6 +1292,8 @@ def aboutPage():
     CODENAME = manifest.CODENAME
     COPYRIGHT = manifest.COPYRIGHT
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
@@ -1252,10 +1303,12 @@ def aboutPage():
         return render_template('about.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
                                notificationsCount=notificationsCount, WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT, season=season,
+                               season_state=season_state)
     else:
         return render_template('about.html', WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT, season=season,
+                               season_state=season_state)
 
 
 @cafe.route('/saves/add', methods=["POST"])
@@ -1289,9 +1342,12 @@ def corners_explore():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
+        season, season_state = sql_commands.fetch_season_state()
+
         return render_template('corners.html', username=username, userID=userID, profilePicture=profilePicture,
                                subscriptionsInfo=subscriptionsInfo, featureAccess=featureAccess,
-                               notifications=notifications, notificationsCount=notificationsCount)
+                               notifications=notifications, notificationsCount=notificationsCount, season=season,
+                               season_state=season_state)
     else:
         profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('explorePage'))
@@ -1304,6 +1360,8 @@ def test_template():
     username = session.get('username')
     userID = session.get('userID')
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
@@ -1312,7 +1370,7 @@ def test_template():
 
         return render_template('guidelines.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
         return render_template('guidelines.html')
 
@@ -1326,6 +1384,8 @@ def guidelines_page():
 
     markdown_content = read_markdown_files("GUIDELINES.md", "markdown")
 
+    season, season_state = sql_commands.fetch_season_state()
+
     if username:
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
@@ -1337,9 +1397,10 @@ def guidelines_page():
         return render_template('guidelines.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
                                subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
-        return render_template('guidelines.html', markdown_content=markdown_content)
+        return render_template('guidelines.html', markdown_content=markdown_content, season=season,
+                               season_state=season_state)
 
 
 @cafe.route('/help/license')
@@ -1350,6 +1411,8 @@ def license_page():
     userID = session.get('userID')
 
     markdown_content = read_markdown_files("LICENSE", "text")
+
+    season, season_state = sql_commands.fetch_season_state()
 
     if username:
 
@@ -1362,9 +1425,10 @@ def license_page():
         return render_template('license.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
                                subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
-        return render_template('license.html', markdown_content=markdown_content)
+        return render_template('license.html', markdown_content=markdown_content, season=season,
+                               season_state=season_state)
 
 
 @cafe.route('/help/notice')
@@ -1375,6 +1439,8 @@ def notice_page():
     userID = session.get('userID')
 
     markdown_content = read_markdown_files("NOTICE", "text")
+
+    season, season_state = sql_commands.fetch_season_state()
 
     if username:
 
@@ -1387,9 +1453,10 @@ def notice_page():
         return render_template('notice.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
                                subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
-                               notificationsCount=notificationsCount)
+                               notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
-        return render_template('notice.html', markdown_content=markdown_content)
+        return render_template('notice.html', markdown_content=markdown_content, season=season,
+                               season_state=season_state)
 
 
 cafe.run(config.ip_address, config.port, debug=config.debug)
