@@ -356,8 +356,8 @@ def fetch_comments_section(userID, videoID):
     return comments
 
 
-def fetch_video_recommendation_board():
-    """Fetches the video recommendation board for the login and register page"""
+def fetch_video_showcase_board():
+    """Fetches the video showcase board for the login and register page"""
     conn = connect_to_database()
 
     result = conn.execute(text("SELECT COUNT(*) FROM videos"))
@@ -365,23 +365,23 @@ def fetch_video_recommendation_board():
     num_of_videos = result.fetchone()[0]
 
     if num_of_videos:
-        video_recommendation_1_randomizer = random.randint(1, num_of_videos)
-        video_recommendation_2_randomizer = random.randint(1, num_of_videos)
-        video_recommendation_3_randomizer = random.randint(1, num_of_videos)
+        video_showcase_1_randomizer = random.randint(1, num_of_videos)
+        video_showcase_2_randomizer = random.randint(1, num_of_videos)
+        video_showcase_3_randomizer = random.randint(1, num_of_videos)
 
         result = conn.execute(text("SELECT * FROM videos WHERE videoID = :videoID"),
-                              {"videoID": video_recommendation_1_randomizer})
-        video_recommendation_1 = result.fetchone()
+                              {"videoID": video_showcase_1_randomizer})
+        video_showcase_1 = result.fetchone()
 
         result = conn.execute(text("SELECT * FROM videos WHERE videoID = :videoID"),
-                              {"videoID": video_recommendation_2_randomizer})
-        video_recommendation_2 = result.fetchone()
+                              {"videoID": video_showcase_2_randomizer})
+        video_showcase_2 = result.fetchone()
 
         result = conn.execute(text("SELECT * FROM videos WHERE videoID = :videoID"),
-                              {"videoID": video_recommendation_3_randomizer})
-        video_recommendation_3 = result.fetchone()
+                              {"videoID": video_showcase_3_randomizer})
+        video_showcase_3 = result.fetchone()
 
-        return video_recommendation_1, video_recommendation_2, video_recommendation_3
+        return video_showcase_1, video_showcase_2, video_showcase_3
 
     print(f"Total videos: {num_of_videos}")
 
@@ -598,3 +598,27 @@ def fetch_season_state():
         return event_data, seasonState[0]
     else:
         return "None", seasonState[0]
+
+
+def fetch_explore_trending_feed():
+    """Fetches the trending feed for the explore page"""
+    conn = connect_to_database()
+
+    result = conn.execute(text("""
+                                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
+                                videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
+                                profileColorSets.profilePictureBorderColor, profiles.channelURLEnabled, profiles.channelURL
+                                FROM videos
+                                JOIN accounts ON videos.userID = accounts.userID
+                                JOIN profiles ON profiles.userID = accounts.userID
+                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+                                WHERE accountStanding != 'Suspended'
+                                ORDER BY views DESC  -- Shows newest first
+                                LIMIT 12
+                                """))
+
+    trending_videos = result.fetchall()
+
+    conn.close()
+
+    return trending_videos

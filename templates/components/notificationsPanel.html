@@ -6,6 +6,7 @@
             </div>
         </div>
         <div class="cafe-notifications-box-body">
+            {% if notifications %}
             {% for notification in notifications %}
                 <div class="cafe-notifications-box-body-item">
                     <div class="cafe-notifications-box-body-profile-details">
@@ -20,6 +21,11 @@
                     </div>
                 </div>
             {% endfor %}
+            {% else %}
+            <div class="cafe-not-found">
+                <h2>You have no notifications</h2>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -78,8 +78,6 @@ def indexPage():
     username = session.get("username")
     userID = session.get("userID")
 
-    videos = sql_commands.fetch_latest_videos()
-
     season, season_state = sql_commands.fetch_season_state()
 
     if season_state == 1:
@@ -101,14 +99,14 @@ def indexPage():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
         recommended_videos = sql_commands.fetch_user_recommended_feed(userID)
-        return render_template('index.html', username=username, videos=videos, userID=userID,
+        return render_template('index.html', username=username, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                subscription_videos=subscription_videos, featureAccess=featureAccess,
                                notifications=notifications, recommended_videos=recommended_videos,
                                notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
         profilePicture = ["profilepicturetest.png"]
-        return redirect(url_for('explorePage'))
+        return redirect(url_for('loginPage'))
 
 
 @cafe.route('/login')
@@ -118,7 +116,7 @@ def loginPage():
 
     page_type = "Login"
 
-    sql_commands.fetch_video_recommendation_board()
+    sql_commands.fetch_video_showcase_board()
 
     season, season_state = sql_commands.fetch_season_state()
 
@@ -135,7 +133,7 @@ def registerPage():
 
     page_type = "Register"
 
-    sql_commands.fetch_video_recommendation_board()
+    sql_commands.fetch_video_showcase_board()
 
     season, season_state = sql_commands.fetch_season_state()
 
@@ -1007,6 +1005,8 @@ def explorePage():
 
     season, season_state = sql_commands.fetch_season_state()
 
+    trending_videos = sql_commands.fetch_explore_trending_feed()
+
     if username:
 
         profilePicture = sql_commands.fetch_profile_info("minimal", userID)
@@ -1018,13 +1018,13 @@ def explorePage():
         return render_template('explore.html', username=username, videos=videos, userID=userID,
                                time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               season_state=season_state, trending_videos=trending_videos)
     else:
         profilePicture = ["profilepicturetest.png"]
         notifications = []
     return render_template('explore.html', username=username, videos=videos, userID=userID,
                            time_ago=time_ago, profilePicture=profilePicture, notifications=notifications, season=season,
-                           season_state=season_state)
+                           season_state=season_state, trending_videos=trending_videos)
 
 
 @cafe.route("/likes/videos")
@@ -1368,11 +1368,11 @@ def test_template():
 
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
 
-        return render_template('guidelines.html', username=username, userID=userID,
+        return render_template('notifications.html', username=username, userID=userID,
                                profilePicture=profilePicture, notifications=notifications,
                                notificationsCount=notificationsCount, season=season, season_state=season_state)
     else:
-        return render_template('guidelines.html')
+        return render_template('notifications.html')
 
 
 @cafe.route('/help/guidelines')

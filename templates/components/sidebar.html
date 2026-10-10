@@ -16,7 +16,9 @@
         {% if username %}
             <div class="cafe-sidebar-left-title">
                 <br><br>
+                {% if subscriptionsInfo %}
                 <p>Subscriptions</p>
+                {% endif %}
             </div>
             <div class="cafe-sidebar-subscriptions-contents">
                 {% for subscription in subscriptionsInfo %}

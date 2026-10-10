@@ -17,6 +17,7 @@
                 <div class="cafe-video-list-contents-liked-videos">
                     <p class="cafe-video-list-title">Liked Videos</p>
                     <div class="cafe-video-posts-row">
+                        {% if videos %}
                         {% for video in videos %}
                         <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
                             <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
@@ -44,6 +45,12 @@
                             </div>
                         </a>
                         {% endfor %}
+                        {% else %}
+                        <div class="cafe-not-found">
+                            <h1>You have no liked videos</h1>
+                            <h2>Like videos and they will appear here</h2>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}

@@ -15,6 +15,7 @@
         <div class="cafe-video-list-body">
             {% if username %}
                 <div class="cafe-video-list-contents-subscriptions">
+                    {% if subscriptionsInfo %}
                     <div class="subscriptions-box-list">
                         {% for subscription in subscriptionsInfo %}
                         {% if subscription[4] == 0 %}
@@ -32,8 +33,10 @@
                         {% endif %}
                         {% endfor %}
                     </div>
+                    {% endif %}
                     <p class="cafe-video-list-title">Subscriptions Feed</p>
                     <div class="cafe-video-posts-row">
+                        {% if videos %}
                         {% for video in videos %}
                         <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
                             <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
@@ -61,6 +64,12 @@
                             </div>
                         </a>
                         {% endfor %}
+                        {% else %}
+                        <div class="cafe-not-found">
+                            <h1>You have no videos in your subscriptions</h1>
+                            <h2>Subscribe to channels that upload videos and they will appear here</h2>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}

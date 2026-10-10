@@ -54,70 +54,43 @@
             {% if username %}
                 <div class="cafe-video-list-contents-subscriptions">
                     <p class="cafe-video-list-title">Latest videos from your subscriptions</p>
-                    <div class="cafe-video-posts-row">
-                        {% for subscriptionVideo in subscription_videos %}
-                        <a class="video-link" href="{{ url_for('watchPage', v=subscriptionVideo[0]) }}">
-                            <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
-                                <div class="cafe-video-post-thumbnail">
-                                    <div class="cafe-video-post-thumbnail-border">
-                                        <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + (subscriptionVideo[4] if subscriptionVideo[4] else 'videotemplate.png')) }}">
+                    {% if subscription_videos %}
+                        <div class="cafe-video-posts-row">
+                            {% for subscriptionVideo in subscription_videos %}
+                            <a class="video-link" href="{{ url_for('watchPage', v=subscriptionVideo[0]) }}">
+                                <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
+                                    <div class="cafe-video-post-thumbnail">
+                                        <div class="cafe-video-post-thumbnail-border">
+                                            <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + (subscriptionVideo[4] if subscriptionVideo[4] else 'videotemplate.png')) }}">
+                                        </div>
+                                    </div>
+                                    <div class="cafe-align-video-post-details">
+                                        <div class="cafe-video-post-profile-picture" style="border-color: {{ subscriptionVideo[7] or '#C78A4B' }} !important;">
+                                            <img class="cafe-video-post-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (subscriptionVideo[6] if subscriptionVideo[6] else 'profilepicturetest.png')) }}">
+                                        </div>
+                                        <div class="cafe-video-post-details">
+                                            <div class="cafe-video-post-title">
+                                                <p>{{ subscriptionVideo[2] }}</p>  <!-- Video Title -->
+                                            </div>
+                                            <div class="cafe-video-post-channel">
+                                                <p>{{ subscriptionVideo[1] }}</p>  <!-- Uploader Username -->
+                                            </div>
+                                            <div class="cafe-video-post-views">
+                                                <p>{{ subscriptionVideo[3] }} views · {{ time_ago(subscriptionVideo[5]) }}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="cafe-align-video-post-details">
-                                    <div class="cafe-video-post-profile-picture" style="border-color: {{ subscriptionVideo[7] or '#C78A4B' }} !important;">
-                                        <img class="cafe-video-post-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (subscriptionVideo[6] if subscriptionVideo[6] else 'profilepicturetest.png')) }}">
-                                    </div>
-                                    <div class="cafe-video-post-details">
-                                        <div class="cafe-video-post-title">
-                                            <p>{{ subscriptionVideo[2] }}</p>  <!-- Video Title -->
-                                        </div>
-                                        <div class="cafe-video-post-channel">
-                                            <p>{{ subscriptionVideo[1] }}</p>  <!-- Uploader Username -->
-                                        </div>
-                                        <div class="cafe-video-post-views">
-                                            <p>{{ subscriptionVideo[3] }} views · {{ time_ago(subscriptionVideo[5]) }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="cafe-not-found">
+                            <h2>Subscribe to channels and their latest videos will appear here</h2>
+                        </div>
+                    {% endif %}
                 </div>
             {% endif %}
-            <div class="cafe-video-list-contents-new">
-                <p class="cafe-video-list-title">New Videos</p>
-                <div class="cafe-video-posts-row">
-                    <!-- Videos go in this element -->
-                    {% for video in videos %}
-                    <a class="video-link" href="{{ url_for('watchPage', v=video[0]) }}">
-                        <div class="cafe-video-post-container cafe-video-post-container-margin-bottom">
-                            <div class="cafe-video-post-thumbnail">
-                                <div class="cafe-video-post-thumbnail-border">
-                                    <img class="cafe-video-post-thumbnail" src="{{ url_for('static', filename='thumbnails/' + (video[4] if video[4] else 'videotemplate.png')) }}">
-                                </div>
-                            </div>
-                            <div class="cafe-align-video-post-details">
-                                <div class="cafe-video-post-profile-picture" style="border-color: {{ video[7] or '#C78A4B' }} !important;">
-                                    <img class="cafe-video-post-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (video[6] if video[6] else 'profilepicturetest.png')) }}">
-                                </div>
-                                <div class="cafe-video-post-details">
-                                    <div class="cafe-video-post-title">
-                                        <p>{{ video[2] }}</p>  <!-- Video Title -->
-                                    </div>
-                                    <div class="cafe-video-post-channel">
-                                        <p>{{ video[1] }}</p>  <!-- Uploader Username -->
-                                    </div>
-                                    <div class="cafe-video-post-views">
-                                        <p>{{ video[3] }} views · {{ time_ago(video[5]) }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
         </div>
     </div>
     <!-- Rename to cafeChannels -->
