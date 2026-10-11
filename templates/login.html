@@ -13,24 +13,11 @@
             <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
                 <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
             </form>
-            <div class="cafe-header-navbar-item cafe-header-navbar-item-right"><a href="{{ ('register' if page_type == 'Login' else 'login') }}">{{ ('Register' if page_type == 'Login' else 'Login') }}</a></div>
+            <div class="cafe-header-navbar-item cafe-header-navbar-item-right"><a class="login-buttons" href="{{ ('register' if page_type == 'Login' else 'login') }}">{{ ('Register' if page_type == 'Login' else 'Login') }}</a></div>
         </div>
     </div>
     <div class="cafe-main-body">
-        <div class="cafe-sidebar-left">
-            <div class="cafe-sidebar-left-contents">
-                <div class="cafe-sidebar-button-contents">
-                    <a href="{{ url_for('indexPage') }}">Home</a>
-                    <a href="{{ url_for('explorePage') }}">Explore</a>
-                    <a href="{{ url_for('indexPage') }}">cafeCorners</a>
-                    <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Your account</p>
-                    <a href="{{ url_for('watchHistory') }}">Watch History</a>
-                    <a href="{{ url_for('userPlaylist') }}">Playlists</a>
-                    <a href="{{ url_for('likedVideosPage') }}">Liked videos</a>
-                    <a href="{{ url_for('viewSaves') }}">Saves</a>
-                </div>
-            </div>
-        </div>
+        {% include "components/sidebar.html" %}
         <div class="cafe-video-list-body">
             {% if page_type == "Login" %}
             <div class="cafe-login-body">

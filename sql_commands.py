@@ -381,6 +381,8 @@ def fetch_video_showcase_board():
                               {"videoID": video_showcase_3_randomizer})
         video_showcase_3 = result.fetchone()
 
+        conn.close()
+
         return video_showcase_1, video_showcase_2, video_showcase_3
 
     print(f"Total videos: {num_of_videos}")
@@ -595,8 +597,11 @@ def fetch_season_state():
                               )
         event_data = result.fetchone()
 
+        conn.close()
+
         return event_data, seasonState[0]
     else:
+        conn.close()
         return "None", seasonState[0]
 
 

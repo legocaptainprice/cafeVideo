@@ -1613,6 +1613,14 @@ video {
     line-height: 0px;
 }
 
+.login-buttons {
+    border: 2px solid #C78A4B;
+}
+
+.login-buttons:hover {
+    background-color: #C78A4B;
+}
+
 body, html {
     background-color: #8A7A5E;
     margin: 0;
