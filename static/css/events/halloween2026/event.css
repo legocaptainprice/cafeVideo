@@ -185,3 +185,23 @@ input[type="radio"]:checked {
 .cafe-register-body {
     border: 2px solid #88e032;
 }
+
+.sidebar-navigation-buttons {
+    background-color: #fb702d;
+}
+
+.sidebar-navigation-buttons:hover {
+    background-color: #f18b57;
+}
+
+.profile-menu-button {
+    background-color: #302033;
+}
+
+.notifications-side-content {
+    border: 2px solid #88e032;
+}
+
+.notifications-main-content {
+    border: 2px solid #88e032;
+}

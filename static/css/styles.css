@@ -40,7 +40,9 @@
 }
 
 .cafe-header-navbar-item-right {
-    margin-left: auto;
+    justify-content: right;
+    align-items: right;
+    width: 33%;
 }
 
 .cafe-main-body {
@@ -143,12 +145,25 @@
 }
 
 a {
-    background-color: #C78A4B;
     color: white;
-    padding: 10px;
-    border-radius: 5px;
     text-decoration: none;
     font-family: 'Roboto', sans-serif;
+}
+
+.sidebar-navigation-buttons {
+    width: 90%;
+    padding: 10px;
+    border-radius: 5px;
+    text-decoration: None;
+    background-color: #C78A4B;
+    color: rgba(255, 255, 255, 0.95);
+    border: none;
+    align-self: flex-end;
+    transition: background 0.3s ease-in-out;
+}
+
+.sidebar-navigation-buttons:hover {
+    background-color: #D08F56; /* Cozy Amber */
 }
 
 
@@ -237,7 +252,7 @@ p {
     font-family: 'Roboto', sans-serif;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4 {
     font-family: 'Poppins', sans-serif;
 }
 
@@ -517,8 +532,16 @@ video {
     color: white;
 }
 
+.cafe-header-navbar-item-left {
+    justify-content: left;
+    align-items: left;
+    width: 33%;
+}
+
 .cafe-search-layout {
-    margin-left: auto;
+    justify-content: center;
+    align-items: center;
+    width: 33%;
 }
 
 .cafe-search-box {
@@ -945,7 +968,7 @@ video {
 }
 
 .cafe-hover-element:hover {
-    background-color: rgba(0,0,0,0.1)
+    background-color: rgba(0,0,0,0.75)
 }
 
 .cafe-navbar-upload-button-img {
@@ -1156,12 +1179,12 @@ video {
 }
 
 .cafe-navbar-notifications-button {
-    height: 36px;
-    width: 41px;
+    height: 35px;
+    width:  35px;
     border-radius: 5px;
     background-color: rgba(0,0,0,0);
     opacity: 1.0;
-    margin-right: 5px;
+    margin-right: 10px !important;
     color: white;
     margin: 0;
     border: none;
@@ -1566,6 +1589,28 @@ video {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
     width: 75%;
     height: 94%;
+}
+
+.profile-menu-buttons-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-menu-button {
+    background-color: #2e1f16;
+    height: 30px !important;
+    width: 25% !important;
+    border-radius: 5px;
+    padding: 0px !important;
+    color: White;
+    text-align: center;
+    line-height: 0px;
 }
 
 body, html {

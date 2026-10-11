@@ -777,12 +777,12 @@ def editUserProfile():
         cursor = conn.cursor()
 
         cursor.execute("""
-                                SELECT profilePicture, profileBanner, profileColorSets.profilePictureBorderColor, 
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, profileBanner, 
                                 channelURLEnabled, channelURL, profileBio, profileColorTheme 
                                 FROM profiles 
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE userID = ?""", (userID,))
-        profileInfo = cursor.fetchone()
+        profilePicture = cursor.fetchone()
 
         # Need to also add a way to have some hidden themes only available for certain events
         # This can be done by adding a hidden column to the profileColorSets table
@@ -795,7 +795,7 @@ def editUserProfile():
 
         season, season_state = sql_commands.fetch_season_state()
 
-        return render_template("edit_profile.html", username=username, userID=userID, profileInfo=profileInfo,
+        return render_template("edit_profile.html", username=username, userID=userID, profilePicture=profilePicture,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
                                notifications=notifications, notificationsCount=notificationsCount, season=season,
                                season_state=season_state)
@@ -813,12 +813,12 @@ def getAccountSettings():
         cursor = conn.cursor()
 
         cursor.execute("""
-                                SELECT profilePicture, profileBanner, channelURL, 
-                                profileColorSets.profilePictureBorderColor, channelURLEnabled
+                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, profileBanner, 
+                                channelURL, channelURLEnabled
                                 FROM profiles 
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                 WHERE userID = ?""", (userID,))
-        profileInfo = cursor.fetchone()
+        profilePicture = cursor.fetchone()
 
         cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
         profileColorSets = cursor.fetchall()
@@ -852,7 +852,7 @@ def getAccountSettings():
         else:
             userAccessDisplay = False
 
-        return render_template("account_settings.html", username=username, userID=userID, profileInfo=profileInfo,
+        return render_template("account_settings.html", username=username, userID=userID, profilePicture=profilePicture,
                                profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
                                userAccessDisplay=userAccessDisplay, notifications=notifications,
                                accountStanding=accountStanding, notificationsCount=notificationsCount, season=season,

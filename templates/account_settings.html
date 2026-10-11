@@ -7,57 +7,27 @@
     {% include "components/scripts.html" %}
 </head>
 <body>
-    <div class="cafe-header-navbar">
-        <div class="cafe-header-navbar-container">
-            <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
-            <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
-            <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
-                <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
-            </form>
-            <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
-                {% if username %}
-                    <button id="notificationButton" class="cafe-navbar-notifications-button cafe-hover-element">
-                        N
-                    </button>
-                    <a class="cafe-navbar-upload-button cafe-hover-element" href="{{ url_for('upload') }}">
-                        <img class="cafe-navbar-upload-button-img" src="{{ url_for('static', filename='images/upload.png') }}">
-                    </a>
-                    {% if profileInfo[4] == 0 %}
-                        <a class="cafe-profile-link" href="{{ url_for('getAccountProfile', id=userID) }}">
-                            <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[3] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
-                        </a>
-                    {% else %}
-                        <a class="cafe-profile-link" href="../{{ profileInfo[2] }}">
-                            <img class="cafe-navbar-pfp" style="border-color: {{ profileInfo[3] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
-                        </a>
-                    {% endif %}
-                {% else %}
-                    <!-- If user is not logged in -->
-                    <a href="{{ url_for('loginPage') }}">Login</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+    {% include "components/navbar.html" %}
     {% include "components/notificationsPanel.html" %}
     <div class="cafe-main-body">
         <div class="cafe-sidebar-left">
             <div class="cafe-sidebar-left-contents">
                 <div class="cafe-sidebar-button-contents">
-                    <a href="{{ url_for('indexPage') }}">Home</a>
-                    <a href="{{ url_for('explorePage') }}">Explore</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('indexPage') }}">Home</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('explorePage') }}">Explore</a>
                     {% if username %}
-                        <a href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
+                        <a class="sidebar-navigation-buttons" href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
                     {% endif %}
-                    <a href="{{ url_for('indexPage') }}">cafeCorners</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('indexPage') }}">cafeCorners</a>
                     <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Your account</p>
-                    <a href="{{ url_for('watchHistory') }}">Watch History</a>
-                    <a href="{{ url_for('userPlaylist') }}">Playlists</a>
-                    <a href="{{ url_for('likedVideosPage') }}">Liked videos</a>
-                    <a href="{{ url_for('viewSaves') }}">Saves</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('watchHistory') }}">Watch History</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('userPlaylist') }}">Playlists</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('likedVideosPage') }}">Liked videos</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('viewSaves') }}">Saves</a>
                     <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Account Settings</p>
-                    <a href="{{ url_for('getAccountSettings') }}">Account</a>
-                    <a href="{{ url_for('editUserProfile') }}">Profile</a>
-                    <a href="{{ url_for('logout') }}">Logout</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('getAccountSettings') }}">Account</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('editUserProfile') }}">Profile</a>
+                    <a class="sidebar-navigation-buttons" href="{{ url_for('logout') }}">Logout</a>
                 </div>
                 {% if username %}
                     <div class="cafe-sidebar-left-title">
@@ -89,7 +59,7 @@
         <div class="cafe-video-list-body">
             <div class="cafe-account-settings-body">
                 <div class="cafe-account-settings-user-details">
-                    <img class="cafe-profile-picture-showcase-image cafe-box-shadow-other" src="{{ url_for('static', filename='profile/pfp/' + (profileInfo[0] if profileInfo[0] else 'profilepicturetest.png')) }}">
+                    <img class="cafe-profile-picture-showcase-image cafe-box-shadow-other" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
                     <h1>{{ username }} - Account Settings</h1>
                 </div>
                 <div class="cafe-account-settings-user-content">
@@ -116,7 +86,7 @@
                                         <p>Username</p>
                                         <input type="text" name="usernameEdit" value="{{ username }}" class="cafe-modify-details-box" required>
                                         <p>Channel URL</p>
-                                        <input type="text" name="channelURL" value="{{ profileInfo[2] }}" class="cafe-modify-details-box" required>
+                                        <input type="text" name="channelURL" value="{{ profilePicture[3] }}" class="cafe-modify-details-box" required>
                                         <button type="submit" class="cafe-comment-button">Save Edits</button>
                                     </form>
                                 </div>

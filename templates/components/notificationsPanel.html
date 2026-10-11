@@ -1,5 +1,31 @@
 <div id="cafeNotificationsPanel" class="cafe-notifications-box hidden">
     <div class="cafe-notifications-box-layout">
+        <div class="profile-menu-buttons-layout">
+            <a class="profile-menu-button cafe-hover-element" href="{{ url_for('test_template') }}">
+                <p>Notifications</p>
+            </a>
+            <a class="profile-menu-button cafe-hover-element" href="{{ url_for('upload') }}">
+                <p>Upload</p>
+            </a>
+            {% if profilePicture[2] == 0 %}
+            <a class="profile-menu-button cafe-hover-element" href="{{ url_for('getAccountProfile', id=userID) }}">
+                <p>Profile</p>
+            </a>
+            {% else %}
+            <a class="profile-menu-button cafe-hover-element" href="/{{ profilePicture[3] }}">
+                <p>Profile</p>
+            </a>
+            {% endif %}
+            <a class="profile-menu-button cafe-hover-element" href="{{ url_for('userPlaylist') }}">
+                <p>Playlists</p>
+            </a>
+            <a class="profile-menu-button cafe-hover-element" href="{{ url_for('viewSaves') }}">
+                <p>Saves</p>
+            </a>
+            <a class="profile-menu-button cafe-hover-element" href="{{ url_for('getAccountSettings') }}">
+                <p>Settings</p>
+            </a>
+        </div>
         <div class="cafe-notifications-box-header">
             <div class="cafe-notifications-box-header-title">
                 <h3>Notifications</h3>

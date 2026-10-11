@@ -9,11 +9,11 @@
     <div class="cafe-header-navbar">
         <div class="cafe-header-navbar-container">
             <!-- <div class="cafe-header-navbar-item"><button>Sidebar Test</button></div> -->
-            <div class="cafe-header-navbar-item"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
+            <div class="cafe-header-navbar-item cafe-header-navbar-item-left"><a class="cafe-navbar-title" href="{{ url_for('indexPage') }}"><h2>cafeVideo</h2></a></div>
             <form action="/searchRequest" method="POST" class="cafe-header-navbar-item cafe-search-layout">
                 <input type="text" name="search" placeholder="Search for a video" class="cafe-search-box" required>
             </form>
-            <div class="cafe-header-navbar-item-right cafe-header-navbar-item"><a href="{{ ('register' if page_type == 'Login' else 'login') }}">{{ ('Register' if page_type == 'Login' else 'Login') }}</a></div>
+            <div class="cafe-header-navbar-item cafe-header-navbar-item-right"><a href="{{ ('register' if page_type == 'Login' else 'login') }}">{{ ('Register' if page_type == 'Login' else 'Login') }}</a></div>
         </div>
     </div>
     <div class="cafe-main-body">

@@ -1,17 +1,17 @@
 <div class="cafe-sidebar-left">
     <div class="cafe-sidebar-left-contents">
         <div class="cafe-sidebar-button-contents">
-            <a href="{{ url_for('indexPage') }}">Home</a>
-            <a href="{{ url_for('explorePage') }}">Explore</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('indexPage') }}">Home</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('explorePage') }}">Explore</a>
             {% if username %}
-                <a href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
+                <a class="sidebar-navigation-buttons" href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
             {% endif %}
-            <a href="{{ url_for('indexPage') }}">cafeCorners</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('indexPage') }}">cafeCorners</a>
             <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Your account</p>
-            <a href="{{ url_for('watchHistory') }}">Watch History</a>
-            <a href="{{ url_for('userPlaylist') }}">Playlists</a>
-            <a href="{{ url_for('likedVideosPage') }}">Liked videos</a>
-            <a href="{{ url_for('viewSaves') }}">Saves</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('watchHistory') }}">Watch History</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('userPlaylist') }}">Playlists</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('likedVideosPage') }}">Liked videos</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('viewSaves') }}">Saves</a>
         </div>
         {% if username %}
             <div class="cafe-sidebar-left-title">
