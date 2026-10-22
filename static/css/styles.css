@@ -1621,6 +1621,10 @@ video {
     background-color: #C78A4B;
 }
 
+.cafe-navigation-buttons-other:hover {
+    background-color: rgba(0,0,0,0.1)
+}
+
 body, html {
     background-color: #8A7A5E;
     margin: 0;

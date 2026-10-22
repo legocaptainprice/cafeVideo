@@ -1,31 +1,31 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
-import sqlite3, post, os, sql_commands, config, manifest, markdown
+import os
+import sql_commands
+import config
+import manifest
+import markdown
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from numberSimplifier import viewSimplify
-from sqlalchemy import create_engine, text
 
 cafe = Flask(__name__)
 
 cafe.config['UPLOAD_FOLDER'] = 'static/videos/'
 cafe.config['ALLOWED_EXTENSIONS'] = {'mp4', 'avi', 'mov', 'mkv'}
 cafe.config['UPLOAD_THUMBNAILS_FOLDER'] = 'static/thumbnails'
-cafe.config['ALLOWED_THUMBNAIL_EXTENSIONS'] = {'jpg', 'png', 'webp'}
+cafe.config['ALLOWED_THUMBNAIL_EXTENSIONS'] = {'jpg', 'png', 'webp', 'jpeg', 'avif', 'jxl'}
 cafe.config['UPLOAD_PROFILE_PICTURE_FOLDER'] = 'static/profile/pfp'
-cafe.config['ALLOWED_PROFILE_PICTURE_EXTENSIONS'] = {'jpg', 'png', 'webp', 'gif', 'jpeg'}
+cafe.config['ALLOWED_PROFILE_PICTURE_EXTENSIONS'] = {'jpg', 'png', 'webp', 'gif', 'jpeg', 'avif', 'jxl'}
 cafe.config['UPLOAD_PROFILE_BANNER_FOLDER'] = 'static/profile/banner'
-cafe.config['ALLOWED_PROFILE_BANNER_EXTENSIONS'] = {'jpg', 'png', 'webp', 'gif'}
+cafe.config['ALLOWED_PROFILE_BANNER_EXTENSIONS'] = {'jpg', 'png', 'webp', 'gif', 'jpeg', 'avif', 'jxl'}
 
 # Ensure the directories for these folders exist
 os.makedirs(cafe.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(cafe.config['UPLOAD_THUMBNAILS_FOLDER'], exist_ok=True)
 os.makedirs(cafe.config['UPLOAD_PROFILE_PICTURE_FOLDER'], exist_ok=True)
 os.makedirs(cafe.config['UPLOAD_PROFILE_BANNER_FOLDER'], exist_ok=True)
-
-# Set the location for the database
-cafeDatabasePath = config.sqlite_db_path
 
 # Security related features
 cafe.config.update(
@@ -53,14 +53,6 @@ def allowedFiletypes(filename, allowedExtensions):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowedExtensions
 
 
-def connect_to_database():
-    # This is planned to be removed in favour of the same function in sql_commands.py
-    conn = sqlite3.connect(cafeDatabasePath)
-    conn.execute('PRAGMA foreign_keys = ON')
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
 def read_markdown_files(markdown_file, mode):
     with open(markdown_file, "r", encoding="utf-8") as file:
         content = file.read()
@@ -72,40 +64,57 @@ def read_markdown_files(markdown_file, mode):
             return content
 
 
+@cafe.context_processor
+def global_variables():
+    """Return the necessary data that will likely be used in all pages"""
+    username = session.get("username")
+    userID = session.get("userID")
+
+    season, season_state = sql_commands.fetch_season_state()
+
+    if username:
+        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
+        featureAccess = sql_commands.fetch_account_info("feature_access", userID)
+        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
+
+        return {
+            "webTitle": manifest.WEB_TITLE,
+            "season": season,
+            "season_state": season_state,
+            "profilePicture": profilePicture,
+            "featureAccess": featureAccess,
+            "subscriptionsInfo": subscriptionsInfo,
+            "notifications": notifications,
+            "notificationsCount": notificationsCount
+        }
+    else:
+        return {
+            "webTitle": manifest.WEB_TITLE,
+            "season": season,
+            "season_state": season_state,
+            "profilePicture": ["profilepicturetest.png"],
+            "notifications:": [],
+            "notificationsCount": 0
+        }
+
+
 @cafe.route('/')
 def indexPage():
     """The home page for cafeVideo"""
     username = session.get("username")
     userID = session.get("userID")
 
-    season, season_state = sql_commands.fetch_season_state()
-
-    if season_state == 1:
-        print("Active")
-        print(season)
-    else:
-        print("Inactive")
-
     if username:
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-        featureAccess = sql_commands.fetch_account_info("feature_access", userID)
-        try:
-            print(featureAccess[0][0])
-        except:
-            pass
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
         # Fetch the latest videos for the subscriptions feed
         subscription_videos = sql_commands.fetch_subscription_videos("latest", userID)
 
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
         recommended_videos = sql_commands.fetch_user_recommended_feed(userID)
+
         return render_template('index.html', username=username, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               subscription_videos=subscription_videos, featureAccess=featureAccess,
-                               notifications=notifications, recommended_videos=recommended_videos,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+                               time_ago=time_ago, subscription_videos=subscription_videos,
+                               recommended_videos=recommended_videos)
     else:
-        profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('loginPage'))
 
 
@@ -118,12 +127,10 @@ def loginPage():
 
     sql_commands.fetch_video_showcase_board()
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
         return redirect(url_for("indexPage"))
     else:
-        return render_template('login.html', page_type=page_type, season=season, season_state=season_state)
+        return render_template('login.html', page_type=page_type)
 
 
 @cafe.route('/register')
@@ -135,12 +142,10 @@ def registerPage():
 
     sql_commands.fetch_video_showcase_board()
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
         return redirect(url_for("indexPage"))
     else:
-        return render_template('login.html', page_type=page_type, season=season, season_state=season_state)
+        return render_template('login.html', page_type=page_type)
 
 
 @cafe.route('/loginAuth', methods=['GET', 'POST'])
@@ -151,13 +156,8 @@ def loginAuthAPI():
         username = request.form['username']
         password = request.form['password']
 
-        conn = connect_to_database()
-        cursor = conn.cursor()
-
         # Fetch user from accounts table
-        cursor.execute('SELECT * FROM accounts WHERE username = ?', (username,))
-        user = cursor.fetchone()
-        conn.close()
+        user = sql_commands.login_auth_check(username)
 
         # Check if user and password is correct
         if user and check_password_hash(user["password"], password):
@@ -204,16 +204,10 @@ def upload():
     # If the user is not logged in, send them to the login page
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
         accountStanding = sql_commands.fetch_account_standing(userID)
-        season, season_state = sql_commands.fetch_season_state()
 
-        return render_template("upload.html", username=username, userID=session.get("userID"),
-                               profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, accountStanding=accountStanding,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+        return render_template("upload.html", username=username, userID=userID,
+                               accountStanding=accountStanding)
     else:
         return redirect(url_for('loginPage'))
 
@@ -255,8 +249,8 @@ def uploadVideo():
             videoTags = request.form['videoTags']
             # videoFile = request.form['videoURL']
 
-            success, message = post.uploadVideoToDatabase(userID, title, description, videoTags, filename,
-                                                          thumbnailFilename)
+            success, message = sql_commands.uploadVideoToDatabase(userID, title, description, videoTags, filename,
+                                                                  thumbnailFilename)
 
             if success:
                 return redirect(url_for('indexPage'))
@@ -267,20 +261,12 @@ def uploadVideo():
 @cafe.route('/watch')
 def watchPage():
     """Function to display the watch page"""
-    #  userAgent = request.user_agent.string
     videoID = request.args.get('v')
     session['redirectToVideoID'] = videoID
     username = session.get('username')
     userID = session.get('userID')
-    #  print(userAgent)
-
-    #  if "AppleWebKit" in str(userAgent):
-    #      print("you are using Safari")
 
     if videoID:
-        # Retrieve video details
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
         video = sql_commands.fetch_video_for_watch_page(videoID)[0]
 
@@ -290,76 +276,51 @@ def watchPage():
 
         if video:
             # If there is a video go to the video
-            # Fetch the latest videos for the new videos feed
-            cursor.execute("SELECT views FROM videos WHERE videoID = ?", (videoID,))
-            viewCount = cursor.fetchone()
-            viewCount = viewCount[0]
+            viewCount = sql_commands.fetch_video_view_count_for_watch_page(videoID)
+
             if viewCount:
                 viewCount = viewCount + 1
                 currentViewCount = viewSimplify(viewCount)
-                cursor.execute("UPDATE videos SET views = ? WHERE videoID = ?", (viewCount, videoID))
+                sql_commands.update_video_view_count(viewCount, videoID)
             else:
                 addFirstView = 1
-                cursor.execute("UPDATE videos SET views = ? WHERE videoID = ?", (addFirstView, videoID))
+                sql_commands.update_video_view_count(addFirstView, videoID)
                 currentViewCount = addFirstView
-            conn.commit()
-            cursor.execute("SELECT username FROM accounts WHERE userID = ?", (video[1],))
-            creatorUsername = cursor.fetchone()
-            videos = sql_commands.fetch_latest_videos()
-            comments = sql_commands.fetch_comments_section(session.get("userID"), videoID)
-            print(comments)
 
+            creatorUsername = sql_commands.fetch_username(video[1])
+            videos = sql_commands.fetch_latest_videos()
+
+            comments = sql_commands.fetch_comments_section(session.get("userID"), videoID)
             num_of_comments = len(comments)
-            cursor.execute("SELECT * FROM subscriptions WHERE subscribedToUserID = ?", (video[1],))
-            subscribers = cursor.fetchall()
+            subscribers = sql_commands.fetch_subscribers_count_from_creator(video[1])
             num_of_subscribers = len(subscribers)
-            cursor.execute("SELECT * FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
-                           (session.get("userID"), video[1]))
-            isSubscribedToChannel = cursor.fetchone()
+
+            isSubscribedToChannel = sql_commands.check_user_subscribed_to_creator_channel(session.get("userID"),
+                                                                                          video[1])
             if isSubscribedToChannel:
                 isSubscribedToChannel = isSubscribedToChannel[0]
-            cursor.execute("SELECT * FROM likedVideos WHERE videoID = ?", (videoID,))
-            likes = cursor.fetchall()
+
+            likes = sql_commands.fetch_video_likes_for_watch_page(videoID)
             num_of_likes = len(likes)
-            cursor.execute("SELECT * FROM likedVideos WHERE videoID = ? AND userID = ?",
-                           (videoID, session.get("userID")))
-            isLikedVideo = cursor.fetchone()
+
+            isLikedVideo = sql_commands.check_user_liked_video(videoID, session.get("userID"))
             if isLikedVideo:
                 isLikedVideo = isLikedVideo[0]
+
             timestamp = int(video[6])
             datePublished = getVideoDatetime(timestamp)
-            season, season_state = sql_commands.fetch_season_state()
 
             if username:
-                post.sendWatchedVideoToDatabase(userID, videoID)  # Add video to user's watch history
+                sql_commands.sendWatchedVideoToDatabase(userID, videoID)  # Add video to user's watch history
 
-                profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-                notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
                 user_account_standing = sql_commands.fetch_account_standing(userID)
 
-                # Retrieve playlists by the user
                 # Fetch the playlists created by the user
-                cursor.execute("""
-                                        SELECT playlists.playlistID, playlists.userID, playlists.playlistName, playlists.playlistType, 
-                                        playlists.visibilityType, accounts.username, profiles.profilePicture, 
-                                        profileColorSets.profilePictureBorderColor, COUNT(playlist_contents.videoID) AS videoCount
-                                        FROM playlists
-                                        JOIN accounts ON playlists.userID = accounts.userID
-                                        JOIN profiles ON profiles.userID = accounts.userID
-                                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                        LEFT JOIN playlist_contents ON playlists.playlistID = playlist_contents.playlistID
-                                        WHERE playlists.userID = ?
-                                        GROUP BY playlists.playlistID
-                                        ORDER BY playlists.playlistID DESC
-                                    """, (userID,))
-                userPlaylists = cursor.fetchall()  # List of tuples
+                userPlaylists = sql_commands.fetch_user_playlists(userID)
 
                 isVideoSaved = sql_commands.fetch_watch_page_details("saves", userID, videoID)
 
             else:
-                profilePicture = ["profilepicturetest.png"]
-                notifications = []
-                notificationsCount = 0
                 userPlaylists = []
                 user_account_standing = None
                 isVideoSaved = False
@@ -370,10 +331,8 @@ def watchPage():
                                    currentViewCount=currentViewCount, num_of_subscribers=num_of_subscribers,
                                    isSubscribedToChannel=isSubscribedToChannel, num_of_likes=num_of_likes,
                                    isLikedVideo=isLikedVideo, datePublished=datePublished, time_ago=time_ago,
-                                   profilePicture=profilePicture, notifications=notifications,
                                    viewSimplifier=viewSimplify, userPlaylists=userPlaylists, isVideoSaved=isVideoSaved,
-                                   accountStanding=accountStanding, user_account_standing=user_account_standing,
-                                   notificationsCount=notificationsCount, season=season, season_state=season_state)
+                                   accountStanding=accountStanding, user_account_standing=user_account_standing)
         else:
             return "Video not found", abort(404)
     else:
@@ -389,7 +348,7 @@ def sendComment():
 
             comment = request.form["postComment"]
 
-            post.sendCommentToDatabase(videoID, userID, comment)
+            sql_commands.sendCommentToDatabase(videoID, userID, comment)
 
             return redirect(f'/watch?v={videoID}')
         else:
@@ -399,15 +358,18 @@ def sendComment():
 @cafe.route('/postReply', methods=["POST"])
 def sendReply():
     if request.method == "POST":
-        userID = session.get("userID")
-        videoID = session.get("redirectToVideoID")
-        commentID = session.get("replyToCommentID")
+        if "userID" in session:
+            userID = session.get("userID")
+            videoID = session.get("redirectToVideoID")
+            commentID = session.get("replyToCommentID")
 
-        reply = request.form["postReply"]
+            reply = request.form["postReply"]
 
-        post.sendReplyToDatabase(commentID, userID, reply)
+            sql_commands.sendReplyToDatabase(commentID, userID, reply)
 
-        return redirect(f'/watch?v={videoID}')
+            return redirect(f'/watch?v={videoID}')
+        else:
+            return redirect(url_for('loginPage'))
 
 
 @cafe.route('/searchRequest', methods=["POST"])
@@ -427,30 +389,18 @@ def searchForVideo():
 
         videos = sql_commands.fetch_search_results("Regular", searchQueryForDB, "None")
 
-        print(videos)
-
         num_of_videos = len(videos)
 
-        season, season_state = sql_commands.fetch_season_state()
-
         if username:
-            profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-            subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-            notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
             subscription_videos = sql_commands.fetch_search_results("Subscriptions", searchQueryForDB, userID)
             num_of_subscription_videos = len(subscription_videos)
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
                                    num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
-                                   profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                                   notifications=notifications, subscription_videos=subscription_videos,
-                                   num_of_subscription_videos=num_of_subscription_videos,
-                                   notificationsCount=notificationsCount, season=season, season_state=season_state)
+                                   subscription_videos=subscription_videos,
+                                   num_of_subscription_videos=num_of_subscription_videos)
         else:
-            profilePicture = ["profilepicturetest.png"]
-            notifications = []
             return render_template("search.html", searchQuery=searchQuery, username=username, videos=videos,
-                                   num_of_videos=num_of_videos, userID=userID, time_ago=time_ago,
-                                   profilePicture=profilePicture, notifications=notifications, season=season, season_state=season_state)
+                                   num_of_videos=num_of_videos, userID=userID, time_ago=time_ago)
 
     else:
         return redirect(url_for("indexPage"))
@@ -463,54 +413,27 @@ def getAccountProfile():
     userID_session = session.get("userID")
 
     if userID:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
         # Check if the userID exists
-        cursor.execute("SELECT * FROM accounts WHERE userID = ?", (userID,))
-        foundUserID = cursor.fetchone()
+        foundUserID = sql_commands.validate_userID(userID)
 
         if foundUserID:
-            cursor.execute("""
-                                SELECT * 
-                                FROM accounts 
-                                JOIN profiles ON accounts.userID = profiles.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE accounts.userID = ?
-                                """, (userID,))
-            profileDetails = cursor.fetchone()
+            profileDetails = sql_commands.fetch_profile_info("profilePage", userID)
 
             accountStanding = sql_commands.fetch_account_standing(userID)
 
             # Fetch the latest videos for the new videos feed
-            cursor.execute("""
-                                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, videos.datetime
-                                FROM videos
-                                JOIN accounts ON videos.userID = accounts.userID
-                                WHERE videos.userID = ?
-                                ORDER BY videoID DESC  -- Shows newest first
-                            """, (userID,))
-            videos = cursor.fetchall()  # List of tuples
+            videos = sql_commands.fetch_profile_info("latestVideos", userID)
             num_of_videos = len(videos)
 
-            cursor.execute("""
-                            SELECT * 
-                            FROM subscriptions
-                            WHERE subscribedToUserID = ?
-                            """, (userID,))
-            subscribers = cursor.fetchall()
+            subscribers = sql_commands.fetch_subscribers_count_from_creator(userID)
             num_of_subscribers = len(subscribers)
-
-            season, season_state = sql_commands.fetch_season_state()
 
             if username:
                 profilePicture = sql_commands.fetch_profile_info("minimal", userID_session)
                 subscriptionsInfo = sql_commands.fetch_subscription_info(userID_session)
 
-                cursor.execute("SELECT * FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
-                               (userID_session, userID))
-
-                isSubscribedToChannel = cursor.fetchone()
+                isSubscribedToChannel = sql_commands.check_user_subscribed_to_creator_channel(userID_session, userID)
 
                 if isSubscribedToChannel:
                     isSubscribedToChannel = isSubscribedToChannel[0]
@@ -520,8 +443,7 @@ def getAccountProfile():
                 if accountStanding == "Suspended" and str(userID_session) != str(userID):
                     return render_template('account_suspended.html', username=username, userID=userID_session,
                                            profilePicture=profilePicture, notifications=notifications,
-                                           subscriptionsInfo=subscriptionsInfo, notificationsCount=notificationsCount,
-                                           season=season, season_state=season_state)
+                                           subscriptionsInfo=subscriptionsInfo, notificationsCount=notificationsCount)
                 else:
                     return render_template("profile.html", username=username, profileDetails=profileDetails,
                                            videos=videos,
@@ -529,21 +451,16 @@ def getAccountProfile():
                                            num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
                                            channelID=userID, isSubscribedToChannel=isSubscribedToChannel,
                                            num_of_videos=num_of_videos, notifications=notifications,
-                                           notificationsCount=notificationsCount,
-                                           season=season, season_state=season_state)
+                                           notificationsCount=notificationsCount)
 
             else:
-                profilePicture = ["profilepicturetest.png"]
-                notifications = []
                 if accountStanding == "Suspended":
                     return render_template('account_suspended.html')
                 else:
                     return render_template("profile.html", username=username, profileDetails=profileDetails,
-                                           videos=videos,
-                                           userID=userID_session, time_ago=time_ago, profilePicture=profilePicture,
+                                           videos=videos, userID=userID_session, time_ago=time_ago,
                                            num_of_subscribers=num_of_subscribers, channelID=userID,
-                                           num_of_videos=num_of_videos, notifications=notifications,
-                                           season=season, season_state=season_state)
+                                           num_of_videos=num_of_videos)
         else:
             return redirect(url_for("indexPage"))
     else:
@@ -555,18 +472,13 @@ def redirectPage(channelURL):
     """The profile of the user by their channel URL"""
     viewerUserID = session.get('userID')
     viewerUsername = session.get("username")
-    conn = connect_to_database()
-    cursor = conn.cursor()
 
-    cursor.execute("SELECT channelURLEnabled FROM profiles WHERE channelURL = ?", (channelURL,))
-    channelURLEnabled = cursor.fetchone()
+    channelURLEnabled = sql_commands.check_channelURL_status(channelURL)
 
     try:
         if channelURLEnabled[0] == 1:
-            cursor.execute("SELECT userID FROM profiles WHERE channelURL = ?", (channelURL,))
-            userID = cursor.fetchone()
+            userID = sql_commands.fetch_profile_from_channelURL(channelURL)
             userID = userID[0]
-            print(userID)
             with cafe.test_request_context(f'channel?id={userID}'):
                 session["username"] = viewerUsername
                 session["userID"] = viewerUserID
@@ -589,36 +501,23 @@ def subscribeToUser():
         return redirect(url_for('indexPage'))
 
     if int(creatorUserID) != int(subscriberUserID):
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
-                       (subscriberUserID, creatorUserID))
-        isSubscribed = cursor.fetchone()
+        isSubscribed = sql_commands.check_user_subscribed_to_creator_channel(subscriberUserID, creatorUserID)
 
         if isSubscribed:
-            cursor.execute("DELETE FROM subscriptions WHERE userID = ? AND subscribedToUserID = ?",
-                           (subscriberUserID, creatorUserID))
-            conn.commit()
-            print("User has been unsubscribed")
-            conn.close()
+            sql_commands.remove_user_subscription(subscriberUserID, creatorUserID)
             return redirect(request.referrer)
         else:
-            cursor.execute("INSERT INTO subscriptions (userID, subscribedToUserID) VALUES (?, ?)",
-                           (subscriberUserID, creatorUserID))
-            conn.commit()
+            sql_commands.add_user_subscription(subscriberUserID, creatorUserID)
 
             # Send the notification to the database
 
-            cursor.execute("SELECT username FROM accounts WHERE userID = ?", (subscriberUserID,))
-            usernameOfSubscriber = cursor.fetchone()
-            print(usernameOfSubscriber[0])
+            usernameOfSubscriber = sql_commands.fetch_username(subscriberUserID)
 
-            post.sendNotificationToDatabase(creatorUserID, subscriberUserID,
+            sql_commands.sendNotificationToDatabase(creatorUserID, subscriberUserID,
                                             f"{usernameOfSubscriber[0]} has subscribed to your channel", "",
                                             "subscribedToChannel", "None")
 
-            conn.close()
             return redirect(request.referrer)
     else:
         return redirect(request.referrer)
@@ -634,37 +533,25 @@ def likeVideoFromCreatorID():
     userID = session["userID"]
 
     if int(creatorUserID) != int(userID):
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM videos WHERE videoID = ?", (videoID,))
-        videoExists = cursor.fetchone()
+        videoExists = sql_commands.check_video_exists(videoID)
+
         if videoExists:
 
-            cursor.execute("SELECT * FROM likedVideos WHERE videoID = ? AND creatorID = ? AND userID = ?",
-                           (videoID, creatorUserID, userID))
-            isLikedVideo = cursor.fetchone()
+            isLikedVideo = sql_commands.check_video_liked(videoID, creatorUserID, userID)
 
             if isLikedVideo:
-                cursor.execute("DELETE FROM likedVideos WHERE videoID = ? AND creatorID = ? AND userID = ?",
-                               (videoID, creatorUserID, userID))
-                conn.commit()
+                sql_commands.delete_like_from_video(videoID, creatorUserID, userID)
                 print("User has unliked the video")
-                conn.close()
                 return redirect(request.referrer)
             else:
-                cursor.execute("INSERT INTO likedVideos (videoID, creatorID, userID) VALUES (?, ?, ?)",
-                               (videoID, creatorUserID, userID))
-                conn.commit()
-                cursor.execute("SELECT username FROM accounts WHERE userID = ?", (userID,))
-                usernameOfLiker = cursor.fetchone()
-                print(usernameOfLiker[0])
-                cursor.execute("SELECT videoTitle FROM videos WHERE videoID = ?", (videoID,))
-                videoTitle = cursor.fetchone()
-                print(videoTitle[0])
-                conn.close()
+                sql_commands.add_like_to_video(videoID, creatorUserID, userID)
 
-                post.sendNotificationToDatabase(creatorUserID, userID, f"{usernameOfLiker[0]} liked your video",
+                usernameOfLiker = sql_commands.fetch_username(userID)
+
+                videoTitle = sql_commands.fetch_video_title(videoID)
+
+                sql_commands.sendNotificationToDatabase(creatorUserID, userID, f"{usernameOfLiker[0]} liked your video",
                                                 f"you received a like on {videoTitle[0]}", "likedVideo", "None")
 
                 return redirect(request.referrer)
@@ -684,41 +571,28 @@ def likeCommentFromCommenterID():
     userID = session['userID']
 
     if int(commenterID) != int(userID):
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM comments WHERE commentID = ?", (commentID,))
-        commentExists = cursor.fetchone()
+        commentExists = sql_commands.fetch_video_comment(commentID)
+
         if commentExists:
 
-            cursor.execute("SELECT * FROM likedComments WHERE commentID = ? AND commenterID = ? AND userID = ?",
-                           (commentID, commenterID, userID))
-            isLikedComment = cursor.fetchone()
+            isLikedComment = sql_commands.check_comment_liked(commentID, commenterID, userID)
 
             if isLikedComment:
-                cursor.execute("DELETE FROM likedComments WHERE commentID = ? AND commenterID = ? AND userID = ?",
-                               (commentID, commenterID, userID))
-                conn.commit()
-                print("User has unliked the comment")
-                conn.close()
+                sql_commands.delete_comment_like(commentID, commenterID, userID)
                 return redirect(request.referrer)
             else:
-                cursor.execute("INSERT INTO likedComments (commentID, commenterID, userID) VALUES (?, ?, ?)",
-                               (commentID, commenterID, userID))
-                conn.commit()
-                print("User has liked the comment")
+                sql_commands.add_comment_like(commentID, commenterID, userID)
 
                 # Send the notification to the database
 
-                cursor.execute("SELECT username FROM accounts WHERE userID = ?", (userID,))
-                usernameOfLiker = cursor.fetchone()
+                usernameOfLiker = sql_commands.fetch_username(userID)
                 print(usernameOfLiker[0])
 
                 # Cutting corners here for a sec
 
-                post.sendNotificationToDatabase(commenterID, userID, f"{usernameOfLiker[0]} has liked your comment",
+                sql_commands.sendNotificationToDatabase(commenterID, userID, f"{usernameOfLiker[0]} has liked your comment",
                                                 "", "likedComment", "None")
-                conn.close()
                 return redirect(request.referrer)
         else:
             return redirect(url_for('indexPage'))
@@ -726,40 +600,28 @@ def likeCommentFromCommenterID():
         return redirect(request.referrer)
 
 
-@cafe.route('/likeReply')
+@cafe.route('/likeReply', methods=["POST"])
 def likeReplyFromReplierID():
     if "userID" not in session:
         return redirect(url_for('loginPage'))
 
-    replyID = session.get("replyID")
-    replierID = session.get("replierID")
+    replyID = request.args.get("replyID")
+    replierID = request.args.get("replierID")
     userID = session["userID"]
 
     if int(replierID) != int(userID):
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM replies WHERE replyID = ?", (replyID,))
-        replyExists = cursor.fetchone()
+        replyExists = sql_commands.fetch_video_reply(replyID)
 
         if replyExists:
-            cursor.execute("SELECT * FROM likedReplies WHERE replyID = ? AND replierID = ? AND userID = ?",
-                           (replyID, replierID, userID))
-            isLikedReply = cursor.fetchone()
+
+            isLikedReply = sql_commands.check_reply_liked(replyID, replierID, userID)
 
             if isLikedReply:
-                cursor.execute("DELETE FROM likedReplies WHERE replyID = ? AND replierID = ? AND userID = ?",
-                               (replyID, replierID, userID))
-                conn.commit()
-                print("User has unliked the reply")
-                conn.close()
+                sql_commands.delete_reply_like(replyID, replierID, userID)
                 return redirect(request.referrer)
             else:
-                cursor.execute("INSERT INTO likedReplies (replyID, replierID, userID) VALUES (?, ?, ?)",
-                               (replyID, replierID, userID))
-                conn.commit()
-                print("User has liked the reply")
-                conn.close()
+                sql_commands.add_reply_like(replyID, replierID, userID)
                 return redirect(request.referrer)
         else:
             return redirect(url_for('indexPage'))
@@ -773,32 +635,15 @@ def editUserProfile():
     userID = session.get("userID")
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, profileBanner, 
-                                channelURLEnabled, channelURL, profileBio, profileColorTheme 
-                                FROM profiles 
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("extended", userID)
 
         # Need to also add a way to have some hidden themes only available for certain events
         # This can be done by adding a hidden column to the profileColorSets table
-        cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
-        profileColorSets = cursor.fetchall()
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
+        profileColorSets = sql_commands.fetch_profile_color_sets()
 
         return render_template("edit_profile.html", username=username, userID=userID, profilePicture=profilePicture,
-                               profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               profileColorSets=profileColorSets)
     else:
         return redirect(url_for('indexPage'))
 
@@ -809,54 +654,27 @@ def getAccountSettings():
     userID = session.get("userID")
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
-        cursor.execute("""
-                                SELECT profilePicture, profileColorSets.profilePictureBorderColor, profileBanner, 
-                                channelURL, channelURLEnabled
-                                FROM profiles 
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE userID = ?""", (userID,))
-        profilePicture = cursor.fetchone()
+        profilePicture = sql_commands.fetch_profile_info("extended", userID)
 
-        cursor.execute('SELECT profileSetID, profileSetName FROM profileColorSets')
-        profileColorSets = cursor.fetchall()
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
+        profileColorSets = sql_commands.fetch_profile_color_sets()
 
         # Fetch the amount of features the user has access to
-        cursor.execute("""
-                            SELECT * 
-                            FROM feature_access
-                            WHERE userID = ?
-                            """, (userID,))
-        userAccessList = cursor.fetchall()
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
+        userAccessList = sql_commands.fetch_user_feature_access(userID)
 
         accountStanding = sql_commands.fetch_account_standing(userID)
-
-        season, season_state = sql_commands.fetch_season_state()
 
         if userAccessList:
             userAccessDisplay = []
             for userAccess in userAccessList:
-                cursor.execute("""
-                                        SELECT *
-                                        FROM feature_gating
-                                        WHERE featureID = ?
-                                        """, (userAccess[0],))
-                feature = cursor.fetchone()
+                feature = sql_commands.fetch_user_features(userAccess[0])
                 userAccessDisplay.append(feature)
         else:
             userAccessDisplay = False
 
         return render_template("account_settings.html", username=username, userID=userID, profilePicture=profilePicture,
-                               profileColorSets=profileColorSets, subscriptionsInfo=subscriptionsInfo,
-                               userAccessDisplay=userAccessDisplay, notifications=notifications,
-                               accountStanding=accountStanding, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               profileColorSets=profileColorSets, userAccessDisplay=userAccessDisplay,
+                               accountStanding=accountStanding)
     else:
         return redirect(url_for('indexPage'))
 
@@ -910,15 +728,13 @@ def saveProfileSettings():
         if 'profilePicture' not in request.files:
             print("No profile picture filename")
 
-        # cursor.execute("UPDATE videos SET views = ? WHERE videoID = ?", (viewCount, videoID))
-
         if profilePicture and allowedFiletypes(profilePicture.filename,
                                                cafe.config['ALLOWED_PROFILE_PICTURE_EXTENSIONS']):
             profilePictureFilename = secure_filename(profilePicture.filename)
             profilePicturePath = os.path.join(cafe.config['UPLOAD_PROFILE_PICTURE_FOLDER'], profilePictureFilename)
             profilePicture.save(profilePicturePath)
 
-            successfulProfilePictureUpload, message = post.uploadProfilePictureToDatabase(profilePictureFilename,
+            successfulProfilePictureUpload, message = sql_commands.uploadProfilePictureToDatabase(profilePictureFilename,
                                                                                           userID)
             if successfulProfilePictureUpload:
                 success = True
@@ -928,15 +744,15 @@ def saveProfileSettings():
             profileBannerPath = os.path.join(cafe.config['UPLOAD_PROFILE_BANNER_FOLDER'], profileBannerFilename)
             profileBanner.save(profileBannerPath)
 
-            successfulProfileBannerUpload, message = post.uploadProfileBannerToDatabase(profileBannerFilename, userID)
+            successfulProfileBannerUpload, message = sql_commands.uploadProfileBannerToDatabase(profileBannerFilename, userID)
             if successfulProfileBannerUpload:
                 success = True
 
         if bio != '':
-            success, message = post.sendProfileBioToDatabase(bio, userID)
+            success, message = sql_commands.sendProfileBioToDatabase(bio, userID)
 
         if profileColorTheme != '':
-            success, message = post.updateProfileColorTheme(profileColorTheme, userID)
+            success, message = sql_commands.updateProfileColorTheme(profileColorTheme, userID)
 
         if success:
             return redirect(url_for('getAccountProfile'))
@@ -950,19 +766,11 @@ def pageNotFound(error):
     username = session.get('username')
     userID = session.get('userID')
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        return render_template('404.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state), 404
+        return render_template('404.html', username=username, userID=userID), 404
     else:
-        return render_template('404.html', season=season, season_state=season_state), 404
+        return render_template('404.html'), 404
 
 
 @cafe.errorhandler(405)
@@ -979,18 +787,8 @@ def accountSubscriptions():
 
         videos = sql_commands.fetch_subscription_videos("page", userID)
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
-
         return render_template('subscriptions.html', username=username, videos=videos, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               time_ago=time_ago)
     else:
         return redirect(url_for('indexPage'))
 
@@ -1003,28 +801,18 @@ def explorePage():
     # Fetch the latest videos for the new videos feed
     videos = sql_commands.fetch_latest_videos()
 
-    season, season_state = sql_commands.fetch_season_state()
-
     trending_videos = sql_commands.fetch_explore_trending_feed()
 
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
         return render_template('explore.html', username=username, videos=videos, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state, trending_videos=trending_videos)
+                               time_ago=time_ago, trending_videos=trending_videos)
     else:
         profilePicture = ["profilepicturetest.png"]
         notifications = []
     return render_template('explore.html', username=username, videos=videos, userID=userID,
-                           time_ago=time_ago, profilePicture=profilePicture, notifications=notifications, season=season,
-                           season_state=season_state, trending_videos=trending_videos)
+                           time_ago=time_ago, profilePicture=profilePicture, notifications=notifications,
+                           trending_videos=trending_videos)
 
 
 @cafe.route("/likes/videos")
@@ -1033,37 +821,12 @@ def likedVideosPage():
     userID = session.get("userID")
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
         # Fetch the latest videos for the liked videos section
-        cursor.execute("""
-                        SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
-                        videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                        profileColorSets.profilePictureBorderColor, accounts.accountStanding
-                        FROM videos
-                        JOIN accounts ON videos.userID = accounts.userID
-                        JOIN profiles ON profiles.userID = accounts.userID
-                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                        JOIN likedVideos ON likedVideos.videoID = videos.videoID
-                        WHERE likedVideos.userID = ? AND accountStanding != 'Suspended'
-                        ORDER BY videos.videoID DESC  -- Shows newest first
-                    """, (userID,))
-        videos = cursor.fetchall()  # List of tuples
+        videos = sql_commands.fetch_user_liked_videos(userID)
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
-
-        conn.close()
         return render_template('liked_videos.html', username=username, videos=videos, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               time_ago=time_ago)
     else:
         return redirect(url_for('loginPage'))
 
@@ -1078,18 +841,8 @@ def watchHistory():
         # Fetch the latest videos for the watch history section
         videos = sql_commands.fetch_user_watch_history(userID)
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
-
         return render_template('history.html', username=username, videos=videos, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               time_ago=time_ago)
     else:
         return redirect(url_for('loginPage'))
 
@@ -1100,38 +853,12 @@ def userPlaylist():
     userID = session.get("userID")
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
 
         # Fetch the playlists created by the user
-        cursor.execute("""
-                        SELECT playlists.playlistID, playlists.userID, playlists.playlistName, playlists.playlistType, 
-                        playlists.visibilityType, accounts.username, profiles.profilePicture, 
-                        profileColorSets.profilePictureBorderColor, COUNT(playlist_contents.videoID) AS videoCount
-                        FROM playlists
-                        JOIN accounts ON playlists.userID = accounts.userID
-                        JOIN profiles ON profiles.userID = accounts.userID
-                        JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                        LEFT JOIN playlist_contents ON playlists.playlistID = playlist_contents.playlistID
-                        WHERE playlists.userID = ? AND playlistType != "watch_queue"
-                        GROUP BY playlists.playlistID
-                        ORDER BY playlists.playlistID DESC
-                    """, (userID,))
-        userPlaylists = cursor.fetchall()  # List of tuples
+        userPlaylists = sql_commands.fetch_user_playlists(userID)
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
-
-        conn.close()
         return render_template('playlists.html', username=username, userPlaylists=userPlaylists, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+                               time_ago=time_ago)
     else:
         return redirect(url_for('loginPage'))
 
@@ -1151,14 +878,8 @@ def playlistCreate():
         print(
             f"Playlist Name: {playlistName}\nPlaylist Description: {playlistDescription}\nPlaylistVisibility: {playlistVisibility}")
 
-        conn = connect_to_database()
-        cursor = conn.cursor()
-
         if playlistName:
-            cursor.execute("INSERT INTO playlists (userID, playlistName, playlistDescription, playlistType, "
-                           "visibilityType) VALUES (?, ?, ?, ?, ?)",
-                           (userID, playlistName, playlistDescription, "Regular", playlistVisibility))
-            conn.commit()
+            sql_commands.create_video_playlist(userID, playlistName, playlistDescription, "Regular", playlistVisibility)
 
         return redirect(request.referrer)
     else:
@@ -1188,44 +909,19 @@ def viewPlaylist(playlistID):
     username = session.get('username')
     userID = session.get('userID')
 
-    conn = connect_to_database()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM playlists WHERE playlistID = ? AND playlistType != 'watch_queue' ", (playlistID,))
-    playlistIDFound = cursor.fetchone()
+    playlistIDFound = sql_commands.fetch_user_playlist(playlistID)
 
     if playlistIDFound:
         print(f"Playlist ID: {playlistIDFound[0]} has been found!\nPlaylist Title: {playlistIDFound[2]}")
 
         print(playlistIDFound[2])
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
-
         # Fetch the latest videos for the playlist section
-        cursor.execute("""
-                                SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
-                                videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                                profileColorSets.profilePictureBorderColor, accounts.accountStanding
-                                FROM videos
-                                JOIN accounts ON videos.userID = accounts.userID
-                                JOIN profiles ON profiles.userID = accounts.userID
-                                JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                JOIN playlist_contents ON playlist_contents.videoID = videos.videoID
-                                WHERE playlist_contents.playlistID = ? AND accounts.accountStanding != 'Suspended'
-                                ORDER BY playlist_contents.videoID DESC  -- Shows newest first
-                            """, (playlistID,))
-        videos = cursor.fetchall()  # List of tuples
+
+        videos = sql_commands.fetch_user_playlist_videos(playlistID)
 
         return render_template('playlist.html', username=username, videos=videos, userID=userID,
-                               time_ago=time_ago, profilePicture=profilePicture, subscriptionsInfo=subscriptionsInfo,
-                               notifications=notifications, playlistInfo=playlistIDFound, watch_queue=False,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+                               time_ago=time_ago, playlistInfo=playlistIDFound, watch_queue=False)
     else:
         abort(404)
 
@@ -1236,45 +932,18 @@ def viewSaves():
     userID = session.get('userID')
 
     if username:
-        conn = connect_to_database()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM playlists WHERE userID = ? AND playlistType = ?", (userID, "watch_queue"))
-        playlistIDFound = cursor.fetchone()
+        playlistIDFound = sql_commands.fetch_user_saves_playlist(userID, "watch_queue")
 
         if playlistIDFound:
             print(f"Playlist ID: {playlistIDFound[0]} has been found!\nPlaylist Title: {playlistIDFound[2]}")
 
             print(playlistIDFound[2])
 
-            profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-            subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-            notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-            season, season_state = sql_commands.fetch_season_state()
-
             # Fetch the latest videos for the playlist section
-            cursor.execute("""
-                                    SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, 
-                                    videos.videoThumbnail, videos.datetime, profiles.profilePicture, 
-                                    profileColorSets.profilePictureBorderColor, accounts.accountStanding
-                                    FROM videos
-                                    JOIN accounts ON videos.userID = accounts.userID
-                                    JOIN profiles ON profiles.userID = accounts.userID
-                                    JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                    JOIN playlist_contents ON playlist_contents.videoID = videos.videoID
-                                    WHERE playlist_contents.playlistID = ? AND accountStanding != 'Suspended'
-                                    ORDER BY playlist_contents.videoID DESC  -- Shows newest first
-                                """, (playlistIDFound[0],))
-            videos = cursor.fetchall()  # List of tuples
+            videos = sql_commands.fetch_user_saved_videos(playlistIDFound[0])
 
             return render_template('playlist.html', username=username, videos=videos, userID=userID,
-                                   time_ago=time_ago, profilePicture=profilePicture,
-                                   subscriptionsInfo=subscriptionsInfo,
-                                   notifications=notifications, playlistInfo=playlistIDFound, watch_queue=True,
-                                   notificationsCount=notificationsCount, season=season, season_state=season_state)
+                                   time_ago=time_ago, playlistInfo=playlistIDFound, watch_queue=True)
         else:
             abort(404)
     else:
@@ -1292,23 +961,13 @@ def aboutPage():
     CODENAME = manifest.CODENAME
     COPYRIGHT = manifest.COPYRIGHT
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        return render_template('about.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications,
-                               notificationsCount=notificationsCount, WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT, season=season,
-                               season_state=season_state)
+        return render_template('about.html', username=username, userID=userID, WEB_TITLE=WEB_TITLE,
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
     else:
         return render_template('about.html', WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT, season=season,
-                               season_state=season_state)
+                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
 
 
 @cafe.route('/saves/add', methods=["POST"])
@@ -1332,24 +991,9 @@ def corners_explore():
     userID = session.get("userID")
 
     if username:
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-        featureAccess = sql_commands.fetch_account_info("feature_access", userID)
-        try:
-            print(featureAccess[0][0])
-        except:
-            pass
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
 
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        season, season_state = sql_commands.fetch_season_state()
-
-        return render_template('corners.html', username=username, userID=userID, profilePicture=profilePicture,
-                               subscriptionsInfo=subscriptionsInfo, featureAccess=featureAccess,
-                               notifications=notifications, notificationsCount=notificationsCount, season=season,
-                               season_state=season_state)
+        return render_template('corners.html', username=username, userID=userID)
     else:
-        profilePicture = ["profilepicturetest.png"]
         return redirect(url_for('explorePage'))
 
 
@@ -1360,17 +1004,9 @@ def test_template():
     username = session.get('username')
     userID = session.get('userID')
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        return render_template('notifications.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+        return render_template('notifications.html', username=username, userID=userID)
     else:
         return render_template('notifications.html')
 
@@ -1384,23 +1020,12 @@ def guidelines_page():
 
     markdown_content = read_markdown_files("GUIDELINES.md", "markdown")
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
         return render_template('guidelines.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications,
-                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+                               markdown_content=markdown_content)
     else:
-        return render_template('guidelines.html', markdown_content=markdown_content, season=season,
-                               season_state=season_state)
+        return render_template('guidelines.html', markdown_content=markdown_content)
 
 
 @cafe.route('/help/license')
@@ -1412,23 +1037,12 @@ def license_page():
 
     markdown_content = read_markdown_files("LICENSE", "text")
 
-    season, season_state = sql_commands.fetch_season_state()
-
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
         return render_template('license.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications,
-                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+                               markdown_content=markdown_content)
     else:
-        return render_template('license.html', markdown_content=markdown_content, season=season,
-                               season_state=season_state)
+        return render_template('license.html', markdown_content=markdown_content)
 
 
 @cafe.route('/help/notice')
@@ -1440,23 +1054,26 @@ def notice_page():
 
     markdown_content = read_markdown_files("NOTICE", "text")
 
-    season, season_state = sql_commands.fetch_season_state()
+    if username:
+
+        return render_template('notice.html', username=username, userID=userID,
+                               markdown_content=markdown_content)
+    else:
+        return render_template('notice.html', markdown_content=markdown_content)
+
+
+@cafe.route('/notifications/all')
+def notificationsPage():
+    """This is page is for users managing their notifications"""
+
+    username = session.get('username')
+    userID = session.get('userID')
 
     if username:
 
-        profilePicture = sql_commands.fetch_profile_info("minimal", userID)
-
-        notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
-
-        subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
-
-        return render_template('notice.html', username=username, userID=userID,
-                               profilePicture=profilePicture, notifications=notifications,
-                               subscriptionsInfo=subscriptionsInfo, markdown_content=markdown_content,
-                               notificationsCount=notificationsCount, season=season, season_state=season_state)
+        return render_template('notifications.html', username=username, userID=userID)
     else:
-        return render_template('notice.html', markdown_content=markdown_content, season=season,
-                               season_state=season_state)
+        return render_template('notifications.html')
 
 
 cafe.run(config.ip_address, config.port, debug=config.debug)
