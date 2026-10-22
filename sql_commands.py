@@ -1072,7 +1072,7 @@ def fetch_user_features(featureID):
                     FROM feature_gating
                     WHERE featureID = :featureID
                     """),
-                          {"featureID": featureID[0]})
+                          {"featureID": featureID})
     feature = result.fetchone()
 
     conn.close()
