@@ -778,6 +778,18 @@ def pageForbidden(error):
     return pageNotFound(NotFound)
 
 
+@cafe.errorhandler(500)
+def pageErrorOccurred(error):
+    username = session.get('username')
+    userID = session.get('userID')
+
+    if username:
+
+        return render_template('500.html', username=username, userID=userID), 500
+    else:
+        return render_template('500.html'), 500
+
+
 @cafe.route('/subscriptions')
 def accountSubscriptions():
     username = session.get("username")

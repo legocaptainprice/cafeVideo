@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/css.html" %}
+    <title>cafeVideo</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% if username %}
+    {% include "components/notificationsPanel.html" %}
+    {% endif %}
+    <div class="cafe-main-body">
+        <div class="cafe-not-found">
+            <h1>Something went wrong.</h1>
+            <p>The service you are looking for is not available at the moment, please try again later.</p>
+        </div>
+    </div>
+    <!-- Rename to cafeChannels -->
+
+</body>
+</html>
