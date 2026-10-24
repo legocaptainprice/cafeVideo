@@ -13,6 +13,9 @@
         <!-- If the user is logged in, show username and logout button -->
         <div class="cafe-header-navbar-item-right cafe-header-navbar-item">
             {% if username %}
+                {% if notificationsCount %}
+                    <div class="notificationBubble"><p>{{ notificationsCount if notificationsCount < 9 else '9+' }}</p></div>
+                {% endif %}
                 <button id="notificationButton" class="cafe-navbar-notifications-button">
                     <img class="cafe-navbar-pfp" style="border-color: {{ profilePicture[1] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (profilePicture[0] if profilePicture[0] else 'profilepicturetest.png')) }}">
                 </button>

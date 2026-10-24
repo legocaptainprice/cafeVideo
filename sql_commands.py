@@ -1339,15 +1339,27 @@ def sendNotificationToDatabase(recipientID, senderID, title, description, item, 
     notificationSent = int(time.time())
 
     try:
-        conn.execute(text("""INSERT INTO notifications (notificationRecipientID, notificationSenderID, 
+        result = conn.execute(text("""SELECT * 
+                                      FROM notifications 
+                                      WHERE notificationRecipientID = :recipientID AND notificationSenderID = :senderID 
+                                      AND notificationTitle = :title 
+                                      AND notificationDescription = :description"""),
+                              {"recipientID": recipientID, "senderID": senderID,
+                               "title": title, "description": description})
+        notificationExists = result.fetchone()
+
+        if notificationExists:
+            print("Notification Already Exists")
+        else:
+            conn.execute(text("""INSERT INTO notifications (notificationRecipientID, notificationSenderID, 
                         notificationTitle, notificationDescription, notificationDateTime, notificationItem, 
                         notificationImage, notificationRead) 
                         VALUES (:RecipientID, :SenderID, :Title, :Description, :DateTime, :Item, :Image, :Read)"""),
                      {"RecipientID": recipientID, "SenderID": senderID, "Title": title,
                       "Description": description, "DateTime": notificationSent, "Item": item, "Image": image,
                       "Read": 0})
-        conn.commit()
-        print("Notification sent")
+            conn.commit()
+            print("Notification sent")
     except IntegrityError:
         print("Error with sending notification")
     finally:

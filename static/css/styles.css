@@ -344,7 +344,7 @@ li {
     margin: 20px auto;  /* Centers the video in the container */
     padding-top: 56.25%;  /* Aspect ratio for 16:9 (height / width * 100) */
     background-color: black;  /* Optional: adds a background if no video */
-    border-radius:25px;
+    border-radius: 10px;
     margin-bottom: 0.1px;
 }
 
@@ -1623,6 +1623,116 @@ video {
 
 .cafe-navigation-buttons-other:hover {
     background-color: rgba(0,0,0,0.1)
+}
+
+.cafe-video-player {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+    height: 100%;
+    border-radius: 10px;
+}
+
+.cafe-video-player video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.cafe-video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    transition: opacity 0.2s ease;
+    opacity: 0;
+}
+
+.cafe-video-player:hover .cafe-video-controls, .cafe-video-player:focus-within .cafe-video-controls {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#video-progress {
+    flex: 1;
+    min-width: 0;
+    height: 5px;
+    accent-color: #C78A4B;
+    cursor: pointer;
+    border-radius: 5px;
+    width: 100%;
+    border: 0 !important;
+}
+
+#video-progress::-webkit-slider-thumb {
+    transform: scale(0.7);
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+#video-volume {
+    width: 75px;
+    height: 5px;
+    accent-color: #C78A4B;
+}
+
+#video-volume::-webkit-slider-thumb {
+    transform: scale(0.7);
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.cafe-video-controls button {
+    background: transparent;
+    border: none;
+    color: White;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.cafe-video-controls input, .cafe-video-controls span {
+    font-family: 'Poppins', sans-serif;
+}
+
+.cafeWebTitle {
+    white-space: nowrap;
+    color: White;
+    font-weight: bold;
+    font-family: 'Poppins', sans-serif !important;
+}
+
+.video-time {
+    font-size: 12.5px;
+}
+
+.notificationBubble {
+    width: 15px;
+    height: 15px;
+    background-color: #FC0027;
+    border-radius: 5px;
+    position: absolute;
+    margin-right: 2.5px;
+    margin-top: -25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.notificationBubble p {
+    font-size: 10px;
+    text-align: center;
+    margin-top: 10px;
 }
 
 body, html {
