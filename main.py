@@ -8,7 +8,9 @@ from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
+from werkzeug.middleware.proxy_fix import ProxyFix
 from numberSimplifier import viewSimplify
+from waitress import serve
 
 cafe = Flask(__name__)
 
@@ -34,6 +36,9 @@ cafe.config.update(
     SESSION_COOKIE_SAMESITE=config.session_cookie_samesite
 )
 cafeSecretKey = os.getenv("SECRET_CAFE_KEY")  # You MUST set a secret key in your environment variables
+
+# Determine whether the host is using http or https
+cafe.wsgi_app = ProxyFix(cafe.wsgi_app, x_proto=1, x_host=1)
 
 if not cafeSecretKey:
     raise RuntimeError("SECRET_CAFE_KEY environment variable not set! This is required to run the server.")
@@ -1088,4 +1093,7 @@ def notificationsPage():
         return render_template('notifications.html')
 
 
-cafe.run(config.ip_address, config.port, debug=config.debug)
+if config.debug:
+    cafe.run(config.ip_address, config.port, debug=config.debug)
+else:
+    serve(cafe, listen=f"{config.ip_address}:{config.port}", threads=config.threads)
