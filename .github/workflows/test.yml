@@ -16,6 +16,9 @@ jobs:
       - name: Download repository
         uses: actions/checkout@v6
 
+      - name: Set test secret key
+        run: echo "SECRET_CAFE_KEY=test-only-key-for-github-actions" >> "$GITHUB_ENV"
+
       - name: Install Python
         uses: actions/setup-python@v6
         with:
