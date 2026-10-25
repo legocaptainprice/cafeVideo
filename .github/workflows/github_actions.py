@@ -63,7 +63,7 @@ def test_github_actions():
             "/about",
             "/results?search_query=test",
             "/channel?id=1",
-            "/watch?v=1"
+            "/watch?v=2"
         ]
         for page in pages:
             response = client.get(page)
