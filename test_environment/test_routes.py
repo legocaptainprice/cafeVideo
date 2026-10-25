@@ -162,6 +162,7 @@ def test_general_pages():
         "/help/guidelines",
         "/about",
         "/results?search_query=test",
+        "/watch?=1"
     ]
 
     print("\n=== GENERAL PAGE TESTS ===")
