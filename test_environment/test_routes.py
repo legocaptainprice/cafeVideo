@@ -166,9 +166,10 @@ def test_general_pages():
 
     print("\n=== GENERAL PAGE TESTS ===")
 
+    cafe.config["TESTING"] = True
+    cafe.config["PROPAGATE_EXCEPTIONS"] = True
+
     with cafe.test_client() as client:
-        # Log in first so routes that require authentication
-        # receive the same session as a logged-in user.
         login_response = client.post(
             "/loginAuth",
             data={
@@ -178,9 +179,7 @@ def test_general_pages():
             follow_redirects=False,
         )
 
-        assert login_response.status_code == 302, (
-            "Could not log in before testing general pages"
-        )
+        assert login_response.status_code == 302
 
         for page in pages:
             response = client.get(page, follow_redirects=False)
@@ -194,6 +193,6 @@ def test_general_pages():
                 f"{page} returned HTTP {response.status_code}"
             )
 
-    print(f"GENERAL PAGE RESULT: All {len(pages)} pages returned HTTP 200.")
+    print(f"GENERAL PAGE RESULT: All {len(pages)} pages passed.")
 
     
