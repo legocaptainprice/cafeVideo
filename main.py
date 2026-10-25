@@ -1093,7 +1093,8 @@ def notificationsPage():
         return render_template('notifications.html')
 
 
-if config.debug:
-    cafe.run(config.ip_address, config.port, debug=config.debug)
-else:
-    serve(cafe, listen=f"{config.ip_address}:{config.port}", threads=config.threads)
+if __name__ == "__main__":
+    if config.debug:
+        cafe.run(config.ip_address, config.port, debug=config.debug)
+    else:
+        serve(cafe, listen=f"{config.ip_address}:{config.port}", threads=config.threads)
