@@ -1,4 +1,4 @@
-name: cafeChannels Deployment Tests
+name: cafeVideo Deployment Tests
 
 on:
   push:
@@ -32,3 +32,18 @@ jobs:
 
       - name: Run automated tests
         run: pytest -vv -s .github/workflows/github_actions.py
+
+      - name: Package tested commit
+        if: success()
+        run: |
+          DATE=$(date -u +'%Y-%m-%d')
+          git archive --format=zip --output="cafeVideo-${DATE}.zip" HEAD
+          echo "ARTIFACT_NAME=cafeVideo-${DATE}.zip" >> "$GITHUB_ENV"
+
+      - name: Upload tested commit
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cafeVideo-${{ github.run_id }}
+          path: ${{ env.ARTIFACT_NAME }}
+          if-no-files-found: error
