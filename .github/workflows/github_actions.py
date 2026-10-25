@@ -3,9 +3,9 @@ from pathlib import Path
 from sqlalchemy import create_engine, text
 import time
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-DB_PATH = Path(__file__).resolve().parents[1] / "cafeDatabase.db"
+DB_PATH = Path(__file__).resolve().parents[2] / "cafeDatabase.db"
 DB_engine = create_engine(f"sqlite:///{DB_PATH.as_posix()}")
 
 from main import cafe
