@@ -10,6 +10,8 @@ DB_engine = create_engine(f"sqlite:///{DB_PATH.as_posix()}")
 
 from main import cafe
 
+cafe.config["TESTING"] = True
+
 def connect_to_database():
     return DB_engine.connect()
 
@@ -68,3 +70,6 @@ def test_github_actions():
         for page in pages:
             response = client.get(page)
             print(f"{page} -> HTTP {response.status_code}")
+
+            if response.status_code in (400, 403, 500):
+                raise Exception(f"{page} returned HTTP {response.status_code}")
