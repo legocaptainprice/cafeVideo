@@ -14,11 +14,13 @@ def connect_to_database():
 
 
 def test_account_registration():
+    username = "github_actions"
+    
     with cafe.test_client() as client:
         response = client.post(
             "/registerAccount",
             data={
-                "username": "github_actions",
+                "username": username,
                 "password": "testpassword"
             },
             follow_redirects=False
