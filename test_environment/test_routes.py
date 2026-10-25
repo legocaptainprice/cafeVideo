@@ -83,14 +83,22 @@ def test_profile_page():
     print("\n=== PROFILE PAGE TEST ===")
 
     with cafe.test_client() as client:
-        # Log in first so the session is established.
+        # Log in and establish the session.
         login_response = client.post(
             "/loginAuth",
-            data={"username": username, "password": password},
+            data={
+                "username": username,
+                "password": password,
+            },
             follow_redirects=False,
         )
+
+        print(f"Login HTTP status: {login_response.status_code}")
         assert login_response.status_code == 302
-        print("LOGIN: Successful")
+
+        with client.session_transaction() as session:
+            user_id = session["userID"]
+            print(f"Logged-in user ID: {user_id}")
 
         # Save the channel URL through the actual account-edit route.
         edit_response = client.post(
@@ -101,19 +109,40 @@ def test_profile_page():
             },
             follow_redirects=False,
         )
-        print(f"ACCOUNT EDIT: HTTP {edit_response.status_code}")
-        print(f"Redirect: {edit_response.location}")
+
+        print(f"Account edit HTTP status: {edit_response.status_code}")
+        print(f"Account edit redirect: {edit_response.location}")
 
         assert edit_response.status_code == 302
 
-        # Visit the profile using the saved channel URL.
+        # Verify the saved channel URL and enabled status for this user.
+        with DB_engine.connect() as conn:
+            profile = conn.execute(
+                text("""
+                    SELECT channelURL, channelURLEnabled
+                    FROM profiles
+                    WHERE userID = :userID
+                """),
+                {"userID": user_id},
+            ).fetchone()
+
+        print(f"Saved profile details: {profile!r}")
+
+        assert profile is not None, "Profile record was not found"
+        assert profile[0] == channel_url, "Channel URL was not saved"
+        assert profile[1] == 1, "Channel URL was not enabled"
+
+        print("DATABASE RESULT: Channel URL saved and enabled.")
+
+        # Load the profile using its channel URL.
         profile_response = client.get(f"/{channel_url}")
 
-        print(f"PROFILE URL: /{channel_url}")
-        print(f"PROFILE HTTP status: {profile_response.status_code}")
+        print(f"Profile URL: /{channel_url}")
+        print(f"Profile HTTP status: {profile_response.status_code}")
         print(f"Response content type: {profile_response.content_type}")
 
         assert profile_response.status_code == 200
+
         print("PROFILE RESULT: Page loaded successfully.")
 
     
