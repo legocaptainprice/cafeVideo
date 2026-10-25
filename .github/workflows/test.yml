@@ -31,4 +31,4 @@ jobs:
           pip install pytest
 
       - name: Run automated tests
-        run: pytest
+        run: pytest -vv -s
