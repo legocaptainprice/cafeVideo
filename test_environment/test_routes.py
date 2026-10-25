@@ -145,4 +145,55 @@ def test_profile_page():
 
         print("PROFILE RESULT: Page loaded successfully.")
 
+
+def test_general_pages():
+    pages = [
+        "/",
+        "/explore",
+        "/subscriptions",
+        "/history/videos",
+        "/likes/videos",
+        "/saves",
+        "/corners",
+        "/upload",
+        "/notifications/all",
+        "/help/license",
+        "/help/notice",
+        "/help/guidelines",
+        "/about",
+        "/results?search_query=test",
+    ]
+
+    print("\n=== GENERAL PAGE TESTS ===")
+
+    with cafe.test_client() as client:
+        # Log in first so routes that require authentication
+        # receive the same session as a logged-in user.
+        login_response = client.post(
+            "/loginAuth",
+            data={
+                "username": "github_actions",
+                "password": "testpassword",
+            },
+            follow_redirects=False,
+        )
+
+        assert login_response.status_code == 302, (
+            "Could not log in before testing general pages"
+        )
+
+        for page in pages:
+            response = client.get(page, follow_redirects=False)
+
+            print(
+                f"{page} -> HTTP {response.status_code}"
+                f" | Content-Type: {response.content_type}"
+            )
+
+            assert response.status_code == 200, (
+                f"{page} returned HTTP {response.status_code}"
+            )
+
+    print(f"GENERAL PAGE RESULT: All {len(pages)} pages returned HTTP 200.")
+
     
