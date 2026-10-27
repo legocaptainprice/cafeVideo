@@ -169,14 +169,15 @@ def fetch_user_notifications(variant, userID):
                                 FROM notifications
                                 JOIN profiles ON notifications.notificationSenderID = profiles.userID
                                 JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                                WHERE notificationRecipientID = :notificationRecipientID
+                                WHERE notificationRecipientID = :notificationRecipientID AND notificationRead != 1
                                 ORDER BY notificationDateTime DESC
                                          """),
                               {"notificationRecipientID": userID})
         notifications = result.fetchall()
 
         result = conn.execute(text(
-            """SELECT COUNT(*) FROM notifications WHERE notificationRecipientID = :notificationRecipientID"""
+            """SELECT COUNT(*) FROM notifications 
+               WHERE notificationRecipientID = :notificationRecipientID AND notificationRead != 1"""
         ), {"notificationRecipientID": userID})
         notificationsCount = result.fetchall()[0]
 
@@ -369,6 +370,8 @@ def fetch_video_for_watch_page(videoID):
                     WHERE videoID = :videoID
                     """), {"videoID": videoID})
     accountStanding_check = result.fetchone()[0]
+
+    conn.close()
 
     return video, accountStanding_check
 
@@ -1393,3 +1396,23 @@ def sendWatchedVideoToDatabase(userID, videoID):
         print("Error when updating watch history")
     finally:
         conn.close()
+
+
+def mark_notification_as_read(notificationID, userID):
+    """Marks the queried notification as read in the database"""
+
+    conn = connect_to_database()
+
+    result = conn.execute(text("""SELECT * FROM notifications 
+                                  WHERE notificationID = :notificationID AND notificationRecipientID = :userID"""),
+                          {"notificationID": notificationID, "userID": userID})
+    notificationMatch = result.fetchone()
+
+    if notificationMatch:
+        conn.execute(text("""UPDATE notifications SET notificationRead = 1 WHERE notificationID = :notificationID"""),
+                     {"notificationID": notificationID})
+        conn.commit()
+    else:
+        print("NotificationID and userID mismatch: No changes have been made.")
+
+    conn.close()

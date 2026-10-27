@@ -1017,15 +1017,17 @@ def corners_explore():
 @cafe.route('/test/template/run')
 def test_template():
     """This is for testing future and experimental pages"""
+    if config.debug:
+        username = session.get('username')
+        userID = session.get('userID')
 
-    username = session.get('username')
-    userID = session.get('userID')
+        if username:
 
-    if username:
-
-        return render_template('notifications.html', username=username, userID=userID)
+            return render_template('notice.html', username=username, userID=userID)
+        else:
+            return render_template('notice.html')
     else:
-        return render_template('notifications.html')
+        abort(404)
 
 
 @cafe.route('/help/guidelines')
@@ -1091,6 +1093,25 @@ def notificationsPage():
         return render_template('notifications.html', username=username, userID=userID)
     else:
         return render_template('notifications.html')
+
+
+@cafe.route("/notifications/actions/read", methods=["POST"])
+def notification_action_read():
+    if request.method == "POST":
+        userID = session.get('userID')
+
+        if userID:
+            notificationID = request.args.get('id')
+            if notificationID:
+                sql_commands.mark_notification_as_read(notificationID, userID)
+
+                return redirect(request.referrer)
+            else:
+                abort(404)
+        else:
+            abort(404)
+    else:
+        abort(404)
 
 
 if __name__ == "__main__":
