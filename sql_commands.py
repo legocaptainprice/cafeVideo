@@ -1291,7 +1291,7 @@ def uploadProfileBannerToDatabase(profileBannerFilename, userID):
 
     try:
         conn.execute(text("UPDATE profiles SET profileBanner = :profileBanner WHERE userID = :userID"),
-                          {"profileBanner": profileBannerFilename, "userID": userID})
+                     {"profileBanner": profileBannerFilename, "userID": userID})
         conn.commit()
         return True, "Uploaded successfully"
     except IntegrityError:
@@ -1358,9 +1358,9 @@ def sendNotificationToDatabase(recipientID, senderID, title, description, item, 
                         notificationTitle, notificationDescription, notificationDateTime, notificationItem, 
                         notificationImage, notificationRead) 
                         VALUES (:RecipientID, :SenderID, :Title, :Description, :DateTime, :Item, :Image, :Read)"""),
-                     {"RecipientID": recipientID, "SenderID": senderID, "Title": title,
-                      "Description": description, "DateTime": notificationSent, "Item": item, "Image": image,
-                      "Read": 0})
+                         {"RecipientID": recipientID, "SenderID": senderID, "Title": title,
+                          "Description": description, "DateTime": notificationSent, "Item": item, "Image": image,
+                          "Read": 0})
             conn.commit()
             print("Notification sent")
     except IntegrityError:
@@ -1416,3 +1416,18 @@ def mark_notification_as_read(notificationID, userID):
         print("NotificationID and userID mismatch: No changes have been made.")
 
     conn.close()
+
+
+def fetch_video_api(videoID):
+    """Fetches video data for the API"""
+
+    conn = connect_to_database()
+
+    result = conn.execute(text("""SELECT * 
+                                  FROM videos 
+                                  WHERE videoID = :videoID"""), {"videoID": videoID})
+    video = result.fetchone()
+
+    conn.close()
+
+    return video

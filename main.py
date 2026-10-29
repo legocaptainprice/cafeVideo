@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort
+from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort, send_file
 import os
 import sql_commands
 import config
 import manifest
 import markdown
+import mimetypes
 from time_converter import time_ago, getVideoDatetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -11,6 +12,7 @@ from werkzeug.exceptions import NotFound
 from werkzeug.middleware.proxy_fix import ProxyFix
 from numberSimplifier import viewSimplify
 from waitress import serve
+from pathlib import Path
 
 cafe = Flask(__name__)
 
@@ -1110,6 +1112,48 @@ def notification_action_read():
                 abort(404)
         else:
             abort(404)
+    else:
+        abort(404)
+
+
+@cafe.route("/api/videos/<int:videoID>", methods=["GET"])
+def retrieve_video_api(videoID):
+    """Returns the video data for the requested videoID"""
+
+    video = sql_commands.fetch_video_api(videoID)
+
+    if video:
+        return {
+            "videoID": video[0],
+            "userID": video[1],
+            "Title": video[2],
+            "Description": video[3],
+            "Tags": video[4],
+            "uploadDate": video[6],
+            "views": video[7]
+        }
+    else:
+        abort(404)
+
+
+@cafe.route("/api/videos/<int:videoID>/stream", methods=["GET"])
+def retrieve_video_stream(videoID):
+    """Retrieve the video file to stream"""
+
+    video = sql_commands.fetch_video_api(videoID)
+
+    if video:
+
+        videoFile = Path(cafe.root_path) / "static" / "videos" / video[5]
+
+        mime_type, _ = mimetypes.guess_type(videoFile.name)
+
+        return send_file(
+            videoFile,
+            mimetype=mime_type,
+            as_attachment=False,
+            conditional=True
+        )
     else:
         abort(404)
 
