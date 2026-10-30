@@ -84,6 +84,7 @@ def global_variables():
         featureAccess = sql_commands.fetch_account_info("feature_access", userID)
         subscriptionsInfo = sql_commands.fetch_subscription_info(userID)
         notifications, notificationsCount = sql_commands.fetch_user_notifications("minimal", userID)
+        userRole = sql_commands.fetch_user_role(userID)
 
         return {
             "webTitle": manifest.WEB_TITLE,
@@ -93,7 +94,8 @@ def global_variables():
             "featureAccess": featureAccess,
             "subscriptionsInfo": subscriptionsInfo,
             "notifications": notifications,
-            "notificationsCount": notificationsCount
+            "notificationsCount": notificationsCount,
+            "userRole": userRole
         }
     else:
         return {
@@ -436,6 +438,9 @@ def getAccountProfile():
             subscribers = sql_commands.fetch_subscribers_count_from_creator(userID)
             num_of_subscribers = len(subscribers)
 
+            # Fetch the channel's user role if it has any
+            channelHasRole = sql_commands.fetch_user_role(userID)
+
             if username:
                 profilePicture = sql_commands.fetch_profile_info("minimal", userID_session)
                 subscriptionsInfo = sql_commands.fetch_subscription_info(userID_session)
@@ -458,7 +463,8 @@ def getAccountProfile():
                                            num_of_subscribers=num_of_subscribers, subscriptionsInfo=subscriptionsInfo,
                                            channelID=userID, isSubscribedToChannel=isSubscribedToChannel,
                                            num_of_videos=num_of_videos, notifications=notifications,
-                                           notificationsCount=notificationsCount)
+                                           notificationsCount=notificationsCount, channelHasRole=channelHasRole,
+                                           accountStanding=accountStanding)
 
             else:
                 if accountStanding == "Suspended":
@@ -467,7 +473,8 @@ def getAccountProfile():
                     return render_template("profile.html", username=username, profileDetails=profileDetails,
                                            videos=videos, userID=userID_session, time_ago=time_ago,
                                            num_of_subscribers=num_of_subscribers, channelID=userID,
-                                           num_of_videos=num_of_videos)
+                                           num_of_videos=num_of_videos, channelHasRole=channelHasRole,
+                                           accountStanding=accountStanding)
         else:
             return redirect(url_for("indexPage"))
     else:
@@ -1148,12 +1155,15 @@ def retrieve_video_stream(videoID):
 
         mime_type, _ = mimetypes.guess_type(videoFile.name)
 
-        return send_file(
-            videoFile,
-            mimetype=mime_type,
-            as_attachment=False,
-            conditional=True
-        )
+        if not os.path.isfile(videoFile):
+            abort(404)
+        else:
+            return send_file(
+                videoFile,
+                mimetype=mime_type,
+                as_attachment=False,
+                conditional=True
+            )
     else:
         abort(404)
 

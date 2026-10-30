@@ -1,0 +1,19 @@
+<div class="cafe-video-player">
+    <video disableremoteplayback id="video" src="{{ url_for('static', filename='videos/' + video[5]) }}"></video>
+
+    <div class="cafe-video-controls">
+        <button id="play">▶</button>
+
+        <input id="video-progress" type="range" min="0" max="100" value="0">
+
+        <span class="video-time" id="time">0:00 / 0:00</span>
+
+        <button id="mute">🔊︎</button>
+
+        <input id="video-volume" type="range" min="0" max="1" step="0.05" value="1">
+
+        <span class="cafeWebTitle"><a href="{{ url_for('indexPage', _external=True) }}">{{ webTitle }}</a></span>
+
+        <button id="fullscreen">⛶</button>
+    </div>
+</div>

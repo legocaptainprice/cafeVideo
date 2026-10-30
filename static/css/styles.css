@@ -631,6 +631,10 @@ video {
     align-items: center;
 }
 
+.cafe-profile-list-title-suspended {
+    margin-top: 0px !important;
+}
+
 .profile-list-buttons {
     display: flex;
     flex-direction: row;
@@ -1671,7 +1675,6 @@ video {
 #video-progress {
     flex: 1;
     min-width: 0;
-    height: 5px;
     accent-color: #C78A4B;
     cursor: pointer;
     border-radius: 5px;
@@ -1679,22 +1682,8 @@ video {
     border: 0 !important;
 }
 
-#video-progress::-webkit-slider-thumb {
-    transform: scale(0.7);
-    margin-right: 5px;
-    margin-left: 5px;
-}
-
 #video-volume {
-    width: 75px;
-    height: 5px;
     accent-color: #C78A4B;
-}
-
-#video-volume::-webkit-slider-thumb {
-    transform: scale(0.7);
-    margin-right: 5px;
-    margin-left: 5px;
 }
 
 .cafe-video-controls button {
@@ -1715,6 +1704,10 @@ video {
     color: White;
     font-weight: bold;
     font-family: 'Poppins', sans-serif !important;
+}
+
+.cafeWebTitle a {
+    background-color: rgba(0,0,0,0);
 }
 
 .video-time {

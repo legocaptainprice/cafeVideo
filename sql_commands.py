@@ -1428,6 +1428,41 @@ def fetch_video_api(videoID):
                                   WHERE videoID = :videoID"""), {"videoID": videoID})
     video = result.fetchone()
 
+    videoCreator = video[1]
+
+    result = conn.execute(text("""SELECT accountStanding 
+                         FROM accounts 
+                         WHERE userID = :userID"""), {"userID": videoCreator})
+    accountStanding = result.fetchone()[0]
+
     conn.close()
 
-    return video
+    if accountStanding == "Suspended":
+        return None
+    else:
+        return video
+
+
+def fetch_user_role(userID):
+    """Fetches the roles assigned to the user"""
+
+    conn = connect_to_database()
+
+    result = conn.execute(text("""SELECT *
+                                  FROM user_roles
+                                  WHERE userID = :userID
+                                """),
+                          {"userID": userID})
+    userHasRole = result.mappings().first()
+
+    if userHasRole:
+        result = conn.execute(text("""SELECT *
+                                      FROM roles
+                                      WHERE roleID = :roleID
+                                        """),
+                              {"roleID": userHasRole["roleID"]})
+        userRole = result.mappings().first()
+
+        return userRole
+    else:
+        return None

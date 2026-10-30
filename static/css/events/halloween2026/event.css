@@ -214,3 +214,11 @@ input[type="radio"]:checked {
 .login-buttons:hover {
     background-color: #88e032;
 }
+
+#video-progress {
+    accent-color: #fb702d;
+}
+
+#video-volume {
+    accent-color: #fb702d;
+}

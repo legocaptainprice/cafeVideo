@@ -14,6 +14,11 @@
     <div class="cafe-main-body">
         {% include "components/sidebar.html" %}
         <div class="cafe-video-list-body">
+            {% if accountStanding == "Suspended" %}
+                <div class="cafe-profile-list-contents-videos">
+                    <p class="cafe-profile-list-title cafe-profile-list-title-modified cafe-profile-list-title-suspended">Your account has been suspended</p>
+                </div>
+            {% endif %}
             <div class="cafe-profile-list-contents-header" style="border-color: {{ profileDetails[17] or '#C78A4B' }} !important;">
                 <div class="cafe-profile-list-contents-header-banner">
                     <img class="cafe-profile-banner" src="{{ url_for('static', filename='profile/banner/' + (profileDetails[10] if profileDetails[10] else 'profilebannertemplate.png')) }}">
@@ -23,7 +28,7 @@
                         <img class="cafe-profile-picture-showcase-image" src="{{ url_for('static', filename='profile/pfp/' + (profileDetails[9] if profileDetails[9] else 'profilepicturetest.png')) }}">
                     </div>
                     <div class="cafe-profile-list-title-unique" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">
-                        <p>{{ profileDetails[1] }} · {{ num_of_subscribers }} subscriber{{'s' if num_of_subscribers != 1 }}</p>
+                        <p>{{ profileDetails[1] }} {{ '(' + channelHasRole["roleName"] + ')' if channelHasRole else '' }} · {{ num_of_subscribers }} subscriber{{'s' if num_of_subscribers != 1 }}</p>
                         {% if profileDetails[0] == userID %}
                             <a href="/account/profile/edit" class="cafe-profile-list-settings" style="background-color: {{ profileDetails[18] or '#C78A4B' }} !important;">Edit</a>
                         {% endif %}
