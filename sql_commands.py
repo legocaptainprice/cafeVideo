@@ -3,7 +3,7 @@ import config
 import random
 import threading
 
-from sqlalchemy import Column, ForeignKey, Integer, MetaData, Table, Text, create_engine, text
+from sqlalchemy import Column, ForeignKey, Integer, MetaData, Table, Text, bindparam, create_engine, text
 
 from sqlalchemy.exc import IntegrityError
 
@@ -561,9 +561,11 @@ def fetch_corners_for_user(userID):
         result = conn.execute(text("""
             SELECT cafeCorners.cornerID, cafeCorners.cornerName, cafeCorners.cornerDescription,
                    cafeCorners.cornerBanner, cafeCorners.cornerURLEnabled, cafeCorners.cornerURL,
+                   accounts.username AS creatorUsername,
                    COALESCE(memberCounts.memberCount, 0) AS memberCount
             FROM cafeCornerMembers AS userMembers
             JOIN cafeCorners ON userMembers.cornerID = cafeCorners.cornerID
+            JOIN accounts ON cafeCorners.userID = accounts.userID
             LEFT JOIN (
                 SELECT cornerID, COUNT(userID) AS memberCount
                 FROM cafeCornerMembers
@@ -573,6 +575,32 @@ def fetch_corners_for_user(userID):
             ORDER BY cafeCorners.creationDate DESC, cafeCorners.cornerID DESC
         """), {"userID": userID})
         return result.mappings().all()
+
+
+def fetch_corner_card_members(cornerIDs):
+    if not cornerIDs:
+        return {}
+
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cafeCornerMembers.cornerID, accounts.userID, accounts.username,
+                   profiles.profilePicture, profileColorSets.profilePictureBorderColor
+            FROM cafeCornerMembers
+            JOIN accounts ON cafeCornerMembers.userID = accounts.userID
+            LEFT JOIN profiles ON profiles.userID = accounts.userID
+            LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+            WHERE cafeCornerMembers.cornerID IN :cornerIDs
+            ORDER BY cafeCornerMembers.cornerID,
+                     CASE WHEN cafeCornerMembers.role = 'Creator' THEN 0 ELSE 1 END,
+                     LOWER(accounts.username)
+        """).bindparams(bindparam("cornerIDs", expanding=True)), {"cornerIDs": cornerIDs})
+        membersByCorner = {cornerID: [] for cornerID in cornerIDs}
+        for member in result.mappings():
+            members = membersByCorner[member["cornerID"]]
+            if len(members) < 4:
+                members.append(member)
+        return membersByCorner
 
 
 def fetch_corner_by_id(cornerID):
@@ -740,10 +768,14 @@ def fetch_pending_corner_invitations(userID):
     with connect_to_database() as conn:
         result = conn.execute(text("""
             SELECT cornerInvitations.cornerID, cafeCorners.cornerName,
-                   inviter.username AS inviterUsername
+                   inviter.username AS inviterUsername, inviterProfile.profilePicture,
+                   inviterColors.profilePictureBorderColor
             FROM cornerInvitations
             JOIN cafeCorners ON cafeCorners.cornerID = cornerInvitations.cornerID
             JOIN accounts AS inviter ON inviter.userID = cornerInvitations.inviterUserID
+            LEFT JOIN profiles AS inviterProfile ON inviterProfile.userID = inviter.userID
+            LEFT JOIN profileColorSets AS inviterColors
+                ON inviterProfile.profileColorTheme = inviterColors.profileSetID
             WHERE cornerInvitations.invitedUserID = :userID
               AND cornerInvitations.invitationStatus = 'pending'
             ORDER BY cornerInvitations.createdAt DESC, cornerInvitations.invitationID DESC

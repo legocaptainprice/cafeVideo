@@ -30,10 +30,13 @@
                         {% if pending_corner_invitations %}
                             {% for invitation in pending_corner_invitations %}
                                 <div class="corner-pending-invitation corner-notification-invitation">
-                                    <div>
-                                        <strong>{{ invitation["cornerName"] }}</strong>
-                                        <p>{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
-                                        <a href="{{ url_for('cornerProfileByID', id=invitation['cornerID']) }}">View Corner</a>
+                                    <div class="corner-invitation-sender">
+                                        <img src="{{ url_for('static', filename='profile/pfp/' + (invitation['profilePicture'] or 'profilepicturetest.png')) }}" style="border-color: {{ invitation['profilePictureBorderColor'] or '#C78A4B' }} !important;" alt="">
+                                        <div>
+                                            <strong>{{ invitation["cornerName"] }}</strong>
+                                            <p>{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
+                                            <a href="{{ url_for('cornerProfileByID', id=invitation['cornerID']) }}">View Corner</a>
+                                        </div>
                                     </div>
                                     <div class="corner-invitation-actions">
                                         <form action="{{ url_for('cornerJoin', cornerID=invitation['cornerID']) }}" method="POST">

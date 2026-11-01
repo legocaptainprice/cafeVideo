@@ -1102,18 +1102,31 @@ def cornersPage():
 
     if username:
         corners = sql_commands.fetch_corners_for_user(userID)
-        return render_template('corners.html', username=username, userID=userID, corners=corners)
+        cornerMembers = sql_commands.fetch_corner_card_members(
+            [corner["cornerID"] for corner in corners]
+        )
+        return render_template(
+            'corners.html',
+            username=username,
+            userID=userID,
+            corners=corners,
+            corner_members=cornerMembers
+        )
     else:
         return redirect(url_for('cornersExplore'))
 
 
 @cafe.route('/corners/explore')
 def cornersExplore():
+    corners = sql_commands.fetch_corners_for_explore()
     return render_template(
         "corners_explore.html",
         username=session.get("username"),
         userID=session.get("userID"),
-        corners=sql_commands.fetch_corners_for_explore()
+        corners=corners,
+        corner_members=sql_commands.fetch_corner_card_members(
+            [corner["cornerID"] for corner in corners]
+        )
     )
 
 

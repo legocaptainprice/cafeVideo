@@ -27,10 +27,27 @@
                     <div class="corner-card-grid">
                         {% for corner in corners %}
                             <a class="corner-card" href="{{ url_for('cornerProfileByURL', cornerURL=corner['cornerURL']) if corner['cornerURLEnabled'] else url_for('cornerProfileByID', id=corner['cornerID']) }}">
-                                <img src="{{ url_for('static', filename='profile/banner/' + (corner['cornerBanner'] or 'profilebannertemplate.png')) }}" alt="">
-                                <div>
+                                {% if corner["cornerBanner"] %}
+                                    <div class="corner-card-banner">
+                                        <img src="{{ url_for('static', filename='profile/banner/' + corner['cornerBanner']) }}" alt="">
+                                    </div>
+                                {% else %}
+                                    {% set card_members = corner_members.get(corner["cornerID"], []) %}
+                                    <div class="corner-card-member-grid">
+                                        {% for slot in range(4) %}
+                                            {% if corner["memberCount"] > 4 and slot == 3 %}
+                                                <span class="corner-card-member-placeholder">+</span>
+                                            {% elif slot < card_members|length %}
+                                                {% set member = card_members[slot] %}
+                                                <img src="{{ url_for('static', filename='profile/pfp/' + (member['profilePicture'] or 'profilepicturetest.png')) }}" style="border-color: {{ member['profilePictureBorderColor'] or '#C78A4B' }} !important;" alt="{{ member['username'] }}">
+                                            {% else %}
+                                                <span class="corner-card-member-placeholder">?</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="corner-card-details">
                                     <h2>{{ corner["cornerName"] }}</h2>
-                                    <p>{{ corner["cornerDescription"] or "A cafeVideo Corner" }}</p>
                                     <span>Created by {{ corner["creatorUsername"] }} · {{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</span>
                                 </div>
                             </a>
