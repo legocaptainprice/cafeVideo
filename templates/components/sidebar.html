@@ -6,7 +6,8 @@
             {% if username %}
                 <a class="sidebar-navigation-buttons" href="{{ url_for('accountSubscriptions') }}">Subscriptions</a>
             {% endif %}
-            <a class="sidebar-navigation-buttons" href="{{ url_for('indexPage') }}">cafeCorners</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('cornersPage') }}">My Corners</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('cornersExplore') }}">Explore Corners</a>
             <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Your account</p>
             <a class="sidebar-navigation-buttons" href="{{ url_for('watchHistory') }}">Watch History</a>
             <a class="sidebar-navigation-buttons" href="{{ url_for('userPlaylist') }}">Playlists</a>

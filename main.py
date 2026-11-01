@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort, send_file
 import hmac
 import os
+import re
 import secrets
 import sql_commands
 import config
@@ -71,6 +72,42 @@ def read_markdown_files(markdown_file, mode):
             return markdown_content
         else:
             return content
+
+
+def corner_csrf_token():
+    return session.setdefault("corner_csrf_token", secrets.token_urlsafe(32))
+
+
+def validate_corner_csrf():
+    submittedToken = request.form.get("csrf_token", "")
+    sessionToken = session.get("corner_csrf_token", "")
+    if not sessionToken or not hmac.compare_digest(submittedToken, sessionToken):
+        abort(400)
+
+
+def render_corner_profile(corner):
+    userID = session.get("userID")
+    members = sql_commands.fetch_corner_members(corner["cornerID"])
+    memberIDs = {member["userID"] for member in members}
+    return render_template(
+        "corner_profile.html",
+        username=session.get("username"),
+        userID=userID,
+        corner=corner,
+        members=members,
+        isCornerCreator=userID == corner["userID"],
+        isCornerMember=userID in memberIDs if userID is not None else False,
+        corner_csrf_token=corner_csrf_token()
+    )
+
+
+def redirect_to_corner(cornerID):
+    corner = sql_commands.fetch_corner_by_id(cornerID)
+    if not corner:
+        abort(404)
+    if corner["cornerURLEnabled"] and corner["cornerURL"]:
+        return redirect(url_for("cornerProfileByURL", cornerURL=corner["cornerURL"]))
+    return redirect(url_for("cornerProfileByID", id=cornerID))
 
 
 def require_admin():
@@ -1059,15 +1096,145 @@ def saveVideo():
 
 
 @cafe.route('/corners')
-def corners_explore():
+def cornersPage():
     username = session.get("username")
     userID = session.get("userID")
 
     if username:
-
-        return render_template('corners.html', username=username, userID=userID)
+        corners = sql_commands.fetch_corners_for_user(userID)
+        return render_template('corners.html', username=username, userID=userID, corners=corners)
     else:
-        return redirect(url_for('explorePage'))
+        return redirect(url_for('cornersExplore'))
+
+
+@cafe.route('/corners/explore')
+def cornersExplore():
+    return render_template(
+        "corners_explore.html",
+        username=session.get("username"),
+        userID=session.get("userID"),
+        corners=sql_commands.fetch_corners_for_explore()
+    )
+
+
+@cafe.route('/corner/create', methods=["GET", "POST"])
+def cornerCreate():
+    userID = session.get("userID")
+    username = session.get("username")
+    if userID is None or not username:
+        return redirect(url_for("loginPage"))
+
+    if request.method == "POST":
+        validate_corner_csrf()
+        if sql_commands.fetch_account_standing(userID) in (None, "Suspended"):
+            abort(403)
+
+        cornerName = request.form.get("cornerName", "").strip()
+        cornerDescription = request.form.get("cornerDescription", "").strip()
+        cornerURLEnabled = request.form.get("cornerURLEnabled") == "on"
+        cornerURL = request.form.get("cornerURL", "").strip().lower()
+
+        if not cornerName or len(cornerName) > 80 or len(cornerDescription) > 500:
+            flash("Enter a Corner name (up to 80 characters) and description (up to 500 characters).", "error")
+        elif cornerURLEnabled and not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", cornerURL):
+            flash("Custom URLs can contain lowercase letters, numbers, and single hyphens between words.", "error")
+        elif cornerURLEnabled and cornerURL in {"create", "corner", "join", "decline"}:
+            flash("That custom URL is reserved for a Corner page.", "error")
+        else:
+            cornerID = sql_commands.create_corner(
+                userID, cornerName, cornerDescription, cornerURLEnabled, cornerURL
+            )
+            if cornerID is None:
+                flash("That custom Corner URL is already in use.", "error")
+            else:
+                flash("Your Corner has been created.", "success")
+                return redirect_to_corner(cornerID)
+
+    return render_template(
+        "corner_create.html",
+        username=username,
+        userID=userID,
+        corner_csrf_token=corner_csrf_token()
+    )
+
+
+@cafe.route('/corner/corner')
+def cornerProfileByID():
+    cornerID = request.args.get("id", type=int)
+    if cornerID is None:
+        abort(404)
+    corner = sql_commands.fetch_corner_by_id(cornerID)
+    if not corner:
+        abort(404)
+    if corner["cornerURLEnabled"] and corner["cornerURL"]:
+        return redirect(url_for("cornerProfileByURL", cornerURL=corner["cornerURL"]))
+    return render_corner_profile(corner)
+
+
+@cafe.route('/corner/<cornerURL>')
+def cornerProfileByURL(cornerURL):
+    corner = sql_commands.fetch_corner_by_url(cornerURL)
+    if not corner:
+        abort(404)
+    return render_corner_profile(corner)
+
+
+@cafe.route('/corner/<int:cornerID>/invite', methods=["POST"])
+def cornerInvite(cornerID):
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+    validate_corner_csrf()
+    if sql_commands.fetch_account_standing(userID) in (None, "Suspended"):
+        abort(403)
+    if sql_commands.fetch_corner_owner(cornerID) != userID:
+        abort(403)
+
+    invitedUsername = request.form.get("username", "").strip()
+    result = sql_commands.create_corner_invitation(cornerID, userID, invitedUsername)
+    messages = {
+        "invited": ("Invitation sent.", "success"),
+        "user_not_found": ("No active account was found with that username.", "error"),
+        "already_member": ("That user is already a Corner member.", "error"),
+        "already_invited": ("That user already has a pending invitation.", "error"),
+        "not_owner": ("Only the Corner creator can invite members.", "error")
+    }
+    message, category = messages[result]
+    flash(message, category)
+    return redirect_to_corner(cornerID)
+
+
+@cafe.route('/corner/join', methods=["POST"])
+def cornerJoin():
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+    validate_corner_csrf()
+    cornerID = request.args.get("cornerID", type=int)
+    if cornerID is None:
+        abort(400)
+    if sql_commands.fetch_account_standing(userID) == "Suspended":
+        abort(403)
+    if not sql_commands.accept_corner_invitation(userID, cornerID):
+        flash("There is no pending invitation for that Corner.", "error")
+        return redirect(url_for("notificationsPage"))
+    return redirect_to_corner(cornerID)
+
+
+@cafe.route('/corner/decline', methods=["POST"])
+def cornerDeclineInvitation():
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+    validate_corner_csrf()
+    cornerID = request.args.get("cornerID", type=int)
+    if cornerID is None:
+        abort(400)
+    if not sql_commands.decline_corner_invitation(userID, cornerID):
+        flash("There is no pending invitation for that Corner.", "error")
+    else:
+        flash("Corner invitation declined.", "success")
+    return redirect(url_for("notificationsPage"))
 
 
 @cafe.route('/test/template/run')
@@ -1145,8 +1312,13 @@ def notificationsPage():
     userID = session.get('userID')
 
     if username:
-
-        return render_template('notifications.html', username=username, userID=userID)
+        return render_template(
+            'notifications.html',
+            username=username,
+            userID=userID,
+            pending_corner_invitations=sql_commands.fetch_pending_corner_invitations(userID),
+            corner_csrf_token=corner_csrf_token()
+        )
     else:
         return render_template('notifications.html')
 

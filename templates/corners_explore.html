@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/css.html" %}
+    <title>cafeVideo - Explore Corners</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% if username %}
+        {% include "components/notificationsPanel.html" %}
+    {% endif %}
+    <div class="cafe-main-body">
+        {% include "components/sidebar.html" %}
+        <main class="cafe-video-list-body">
+            <section class="corner-page">
+                <h1 class="cafe-video-list-title">Explore Corners</h1>
+                <div class="corner-page-actions">
+                    {% if username %}
+                        <a class="corner-action-link" href="{{ url_for('cornersPage') }}">My Corners</a>
+                        <a class="corner-action-link" href="{{ url_for('cornerCreate') }}">Create a Corner</a>
+                    {% endif %}
+                </div>
+                {% if corners %}
+                    <div class="corner-card-grid">
+                        {% for corner in corners %}
+                            <a class="corner-card" href="{{ url_for('cornerProfileByURL', cornerURL=corner['cornerURL']) if corner['cornerURLEnabled'] else url_for('cornerProfileByID', id=corner['cornerID']) }}">
+                                <img src="{{ url_for('static', filename='profile/banner/' + (corner['cornerBanner'] or 'profilebannertemplate.png')) }}" alt="">
+                                <div>
+                                    <h2>{{ corner["cornerName"] }}</h2>
+                                    <p>{{ corner["cornerDescription"] or "A cafeVideo Corner" }}</p>
+                                    <span>Created by {{ corner["creatorUsername"] }} · {{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="cafe-not-found">
+                        <h2>No Corners yet</h2>
+                        <p>New Corners will appear here.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

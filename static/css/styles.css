@@ -162,6 +162,236 @@
     color: #175c27;
 }
 
+.corner-page,
+.corner-form-page,
+.corner-profile {
+    width: 100%;
+    max-width: 1100px;
+}
+
+.corner-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.corner-action-link,
+.corner-secondary-link {
+    display: inline-block;
+    border: 0;
+    border-radius: 5px;
+    padding: 9px 14px;
+    background: #3a4c4b;
+    color: white;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.corner-action-link:hover {
+    background: #526b69;
+}
+
+.corner-secondary-link {
+    background: #73594b;
+}
+
+.corner-card-grid,
+.corner-member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.corner-card {
+    overflow: hidden;
+    border: 2px solid #3a4c4b;
+    border-radius: 7px;
+    background: #8A7A5E;
+    color: #2e1f16;
+    text-decoration: none;
+}
+
+.corner-card > img {
+    display: block;
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+}
+
+.corner-card > div {
+    padding: 12px;
+}
+
+.corner-card h2,
+.corner-card p {
+    margin: 0 0 8px;
+}
+
+.corner-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 7px;
+    background: rgba(58, 76, 75, 0.9);
+    color: white;
+}
+
+.corner-form input:not([type="checkbox"]),
+.corner-form textarea,
+.corner-invite-form input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #C78A4B;
+    border-radius: 5px;
+    padding: 9px;
+    background: #f5eee4;
+    color: #2e1f16;
+    font: inherit;
+}
+
+.corner-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.corner-url-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.corner-form small {
+    color: #eee;
+}
+
+.corner-form .corner-action-link {
+    align-self: flex-start;
+    margin-top: 10px;
+}
+
+.corner-profile-header {
+    overflow: hidden;
+    border: 2px solid #C78A4B;
+    border-radius: 7px;
+    background: #3a4c4b;
+    color: white;
+}
+
+.corner-profile-banner {
+    display: block;
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.corner-profile-details {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 16px 20px;
+}
+
+.corner-profile-details h1,
+.corner-profile-details p {
+    margin: 0 0 8px;
+}
+
+.corner-creator-badge {
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: #C78A4B;
+    color: #2e1f16;
+}
+
+.corner-invite-form {
+    display: grid;
+    gap: 8px;
+    max-width: 600px;
+    margin: 16px 0;
+}
+
+.corner-invite-form > div,
+.corner-invitation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.corner-invitation-notice {
+    color: #2e1f16;
+}
+
+.corner-pending-invitations {
+    max-width: 800px;
+    margin: 12px 0 20px;
+    color: #2e1f16;
+}
+
+.corner-pending-invitation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px;
+    border: 2px solid #C78A4B;
+    border-radius: 6px;
+    background: #3a4c4b;
+    color: white;
+}
+
+.corner-pending-invitation p {
+    margin: 6px 0;
+}
+
+.corner-pending-invitation a {
+    color: #f0c08e;
+}
+
+.corner-members {
+    margin-top: 24px;
+}
+
+.corner-members > h2 {
+    color: #2e1f16;
+}
+
+.corner-member-card {
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+    padding: 14px;
+    border: 2px solid #C78A4B;
+    border-radius: 7px;
+    background: #3a4c4b;
+    color: white;
+    text-decoration: none;
+}
+
+.corner-member-card img {
+    width: 76px;
+    height: 76px;
+    border: 2px solid #C78A4B;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.corner-message-error {
+    color: #8f2020;
+}
+
+.corner-message-success {
+    color: #175c27;
+}
+
 .cafe-video-list-contents-recommended {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;

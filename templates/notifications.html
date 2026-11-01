@@ -17,6 +17,35 @@
                 <p class="cafe-video-list-title">Notifications</p>
             </div>
             <div class="notifications-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="corner-message corner-message-{{ category }}" role="status">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
+                {% if pending_corner_invitations %}
+                    <section class="corner-pending-invitations">
+                        <h2>Corner invitations</h2>
+                        {% for invitation in pending_corner_invitations %}
+                            <div class="corner-pending-invitation">
+                                <div>
+                                    <strong>{{ invitation["cornerName"] }}</strong>
+                                    <p>{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
+                                    <a href="{{ url_for('cornerProfileByID', id=invitation['cornerID']) }}">View Corner</a>
+                                </div>
+                                <div class="corner-invitation-actions">
+                                    <form action="{{ url_for('cornerJoin', cornerID=invitation['cornerID']) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ corner_csrf_token }}">
+                                        <button class="corner-action-link" type="submit">Accept invitation</button>
+                                    </form>
+                                    <form action="{{ url_for('cornerDeclineInvitation', cornerID=invitation['cornerID']) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ corner_csrf_token }}">
+                                        <button class="corner-secondary-link" type="submit">Decline</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </section>
+                {% endif %}
                 <!-- <div class="notifications-side-content hidden">
                 </div> -->
                 <div class="notifications-main-content">
@@ -43,7 +72,7 @@
                                 </div>
                             </div>
                         {% endfor %}
-                        {% else %}
+                        {% elif not pending_corner_invitations %}
                         <div class="cafe-not-found">
                             <h2>You have no notifications</h2>
                         </div>

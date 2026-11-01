@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/css.html" %}
+    <title>cafeVideo - Create a Corner</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
+    <div class="cafe-main-body">
+        {% include "components/sidebar.html" %}
+        <main class="cafe-video-list-body">
+            <section class="corner-form-page">
+                <h1 class="cafe-video-list-title">Create a Corner</h1>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="corner-message corner-message-{{ category }}" role="status">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
+                <form class="corner-form" action="{{ url_for('cornerCreate') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ corner_csrf_token }}">
+                    <label for="cornerName">Corner name</label>
+                    <input id="cornerName" name="cornerName" maxlength="80" required value="{{ request.form.get('cornerName', '') }}">
+
+                    <label for="cornerDescription">Description</label>
+                    <textarea id="cornerDescription" name="cornerDescription" maxlength="500" rows="4">{{ request.form.get('cornerDescription', '') }}</textarea>
+
+                    <label class="corner-checkbox-label">
+                        <input type="checkbox" name="cornerURLEnabled" {% if request.form.get('cornerURLEnabled') == 'on' %}checked{% endif %}>
+                        Enable a custom Corner URL
+                    </label>
+
+                    <label for="cornerURL">Custom URL</label>
+                    <div class="corner-url-input"><span>/corner/</span><input id="cornerURL" name="cornerURL" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="{{ request.form.get('cornerURL', '') }}" placeholder="your-corner"></div>
+                    <small>Use lowercase letters, numbers, and hyphens. The URL is only used when enabled.</small>
+
+                    <button class="corner-action-link" type="submit">Create Corner</button>
+                </form>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
