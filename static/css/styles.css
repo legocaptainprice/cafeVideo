@@ -95,6 +95,73 @@
     margin-left: 240px;
 }
 
+.admin-page {
+    max-width: 1000px;
+}
+
+.admin-page p {
+    color: #2e1f16;
+}
+
+.admin-account-list {
+    margin-top: 20px;
+    background: rgba(58, 76, 75, 0.9);
+    border-radius: 8px;
+    color: white;
+}
+
+.admin-account-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.admin-account-row strong, span {
+    font-family: 'Poppins', sans-serif;
+}
+
+.admin-account-row:last-child {
+    border-bottom: 0;
+}
+
+.admin-account-row > div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.admin-account-id,
+.admin-account-role,
+.admin-account-standing {
+    color: #ddd;
+    font-size: 0.9em;
+}
+
+.admin-suspend-button {
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 5px;
+    background: #8f3939;
+    color: white;
+    cursor: pointer;
+}
+
+.admin-suspend-button:hover {
+    background: #ad4545;
+}
+
+.admin-message-error {
+    color: #8f2020;
+}
+
+.admin-message-success {
+    color: #175c27;
+}
+
 .cafe-video-list-contents-recommended {
     background-color: rgba(72, 82, 112, 0);
     border-radius: 5px;

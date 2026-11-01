@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/css.html" %}
+    {% include "components/scripts.html" %}
+    <title>cafeVideo - Admin</title>
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
+    <div class="cafe-main-body">
+        {% include "components/sidebar.html" %}
+        <main class="cafe-video-list-body">
+            <section class="admin-page">
+                <h1 class="cafe-video-list-title">Account administration</h1>
+                <p>Admin tools are limited to suspending accounts. Suspensions cannot be reversed here.</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="admin-message admin-message-{{ category }}" role="status">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
+
+                {% if accounts %}
+                    <div class="admin-account-list">
+                        {% for account in accounts %}
+                            <div class="admin-account-row">
+                                <div>
+                                    <strong>{{ account["username"] }}</strong>
+                                    <span class="admin-account-id">ID {{ account["userID"] }}</span>
+                                    {% if account["roleNames"] %}
+                                        <span class="admin-account-role">{{ account["roleNames"] }}</span>
+                                    {% endif %}
+                                    <span class="admin-account-standing">{{ account["accountStanding"] }}</span>
+                                </div>
+                                {% if account["accountStanding"] == "Suspended" %}
+                                    <span>Suspended</span>
+                                {% elif account["userID"] == session.get("userID") %}
+                                    <span>Your account</span>
+                                {% else %}
+                                    <form action="{{ url_for('suspendAccount', targetUserID=account['userID']) }}" method="POST" onsubmit="return confirm('Suspend this account?');">
+                                        <input type="hidden" name="csrf_token" value="{{ admin_csrf_token }}">
+                                        <button class="admin-suspend-button" type="submit">Suspend account</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No accounts were found.</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>
