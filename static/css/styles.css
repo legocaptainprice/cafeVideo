@@ -372,6 +372,7 @@
 
 .corner-card-member-placeholder-more {
     border: 0;
+    box-shadow: none;
     font-size: 48px;
 }
 
