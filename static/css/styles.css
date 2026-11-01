@@ -451,23 +451,25 @@
     font-family: 'Roboto', sans-serif;
 }
 
-.corner-pending-invitations {
-    width: 100%;
-    margin: 12px 0 20px;
-    color: white;
-}
-
 .corner-pending-invitation {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
+    width: 99%;
+    box-sizing: border-box;
+    margin: 10px auto 0;
     padding: 14px;
     border: 2px solid #C78A4B;
     border-radius: 5px;
     background: #3a4c4b;
     color: white;
+}
+
+.corner-notification-invitation,
+.corner-notification-invitation * {
+    font-family: 'Roboto', sans-serif;
 }
 
 .corner-pending-invitation p {
@@ -486,10 +488,13 @@
 }
 
 .corner-members-title {
+    display: flex;
     width: 100%;
     box-sizing: border-box;
+    height: 40px;
     align-items: center;
     justify-content: space-between;
+    text-align: left;
     font-family: 'Roboto', sans-serif;
 }
 
