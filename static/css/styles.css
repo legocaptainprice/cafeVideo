@@ -99,6 +99,10 @@
     max-width: 1000px;
 }
 
+.admin-page p {
+    color: #2e1f16;
+}
+
 .admin-account-list {
     margin-top: 20px;
     background: rgba(58, 76, 75, 0.9);
@@ -113,6 +117,10 @@
     gap: 16px;
     padding: 14px 18px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.admin-account-row strong, span {
+    font-family: 'Poppins', sans-serif;
 }
 
 .admin-account-row:last-child {
