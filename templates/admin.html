@@ -13,9 +13,9 @@
     <div class="cafe-main-body">
         {% include "components/sidebar.html" %}
         <main class="cafe-video-list-body">
-            <section class="admin-page">
-                <h1 class="cafe-video-list-title">Account administration</h1>
-                <p>Admin tools are limited to suspending accounts. Suspensions cannot be reversed here.</p>
+            <section class="admin-page cafe-profile-list-contents-videos">
+                <p class="cafe-video-list-title admin-page-title">Account administration</p>
+                <p class="admin-page-description">Admin tools are limited to suspending accounts. Suspensions cannot be reversed here.</p>
 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% for category, message in messages %}
@@ -28,6 +28,7 @@
                         {% for account in accounts %}
                             <div class="admin-account-row">
                                 <div>
+                                    <img class="admin-account-avatar" style="border-color: {{ account['profilePictureBorderColor'] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (account['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
                                     <strong>{{ account["username"] }}</strong>
                                     <span class="admin-account-id">ID {{ account["userID"] }}</span>
                                     {% if account["roleNames"] %}

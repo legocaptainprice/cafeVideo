@@ -17,33 +17,69 @@
                 <p class="cafe-video-list-title">Notifications</p>
             </div>
             <div class="notifications-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="corner-message corner-message-{{ category }}" role="status">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
                 <!-- <div class="notifications-side-content hidden">
                 </div> -->
                 <div class="notifications-main-content">
                     <div class="cafe-notifications-box-body">
-                        {% if notifications %}
-                        {% for notification in notifications %}
-                            <div class="cafe-notifications-box-body-item cafe-notifications-box-body-item-override">
-                                <div class="cafe-notifications-box-body-profile-details">
-                                    <!-- Creator profile picture for testing -->
-                                    <div class="cafe-watch-creator-profile-picture" style="border-color: {{ notification[10] or '#C78A4B' }} !important;">
-                                        <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (notification[9] if notification[9] else 'profilepicturetest.png')) }}">
+                        {% set visible_notifications = namespace(found=false) %}
+                        {% if pending_corner_invitations %}
+                            {% for invitation in pending_corner_invitations %}
+                                <div class="cafe-notifications-box-body-item cafe-notifications-box-body-item-override corner-notification-invitation">
+                                    <div class="cafe-notifications-box-body-profile-details">
+                                        <div class="cafe-watch-creator-profile-picture" style="border-color: {{ invitation['profilePictureBorderColor'] or '#C78A4B' }} !important;">
+                                            <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (invitation['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
+                                        </div>
+                                    </div>
+                                    <div class="cafe-notifications-box-body-item-details">
+                                        <p class="cafe-notifications-item-title">{{ invitation["cornerName"] }}</p>
+                                        <p class="cafe-notifications-item-description">{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
+                                        <a href="{{ url_for('cornerProfileByID', id=invitation['cornerID']) }}">View Corner</a>
+                                    </div>
+                                    <div class="corner-invitation-actions">
+                                        <form action="{{ url_for('cornerJoin', cornerID=invitation['cornerID']) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ corner_csrf_token }}">
+                                            <button class="corner-action-link" type="submit">Accept invitation</button>
+                                        </form>
+                                        <form action="{{ url_for('cornerDeclineInvitation', cornerID=invitation['cornerID']) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ corner_csrf_token }}">
+                                            <button class="corner-secondary-link" type="submit">Decline</button>
+                                        </form>
                                     </div>
                                 </div>
-                                <div class="cafe-notifications-box-body-item-details">
-                                    <p style="font-weight: bold;" class="cafe-notifications-item-title">{{ notification[3] }}</p>
-                                    <p style="font-size: 12px;" class="cafe-notifications-item-description">{{ notification[4] }}</p>
-                                </div>
-                                <div class="notifications-mark-read-box">
-                                    <button
-                                            id="mark-notification-read"
-                                            class="markReadButton cafe-comment-button {{ 'mark-read' if notification[8] == 1 else '' }}"
-                                            data-url="{{ url_for('notification_action_read', id=notification[0]) }}">{{ 'Marked as Read' if notification[8] == 1 else 'Mark as Read' }}
-                                    </button>
-                                </div>
-                            </div>
-                        {% endfor %}
-                        {% else %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if notifications %}
+                            {% for notification in notifications %}
+                                {% if not (notification[6] and notification[6].startswith('corner-invite:')) %}
+                                    {% set visible_notifications.found = true %}
+                                    <div class="cafe-notifications-box-body-item cafe-notifications-box-body-item-override">
+                                        <div class="cafe-notifications-box-body-profile-details">
+                                            <!-- Creator profile picture for testing -->
+                                            <div class="cafe-watch-creator-profile-picture" style="border-color: {{ notification[10] or '#C78A4B' }} !important;">
+                                                <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (notification[9] if notification[9] else 'profilepicturetest.png')) }}">
+                                            </div>
+                                        </div>
+                                        <div class="cafe-notifications-box-body-item-details">
+                                            <p style="font-weight: bold;" class="cafe-notifications-item-title">{{ notification[3] }}</p>
+                                            <p style="font-size: 12px;" class="cafe-notifications-item-description">{{ notification[4] }}</p>
+                                        </div>
+                                        <div class="notifications-mark-read-box">
+                                            <button
+                                                    id="mark-notification-read"
+                                                    class="markReadButton cafe-comment-button {{ 'mark-read' if notification[8] == 1 else '' }}"
+                                                    data-url="{{ url_for('notification_action_read', id=notification[0]) }}">{{ 'Marked as Read' if notification[8] == 1 else 'Mark as Read' }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if not visible_notifications.found and not pending_corner_invitations %}
                         <div class="cafe-not-found">
                             <h2>You have no notifications</h2>
                         </div>

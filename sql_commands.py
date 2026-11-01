@@ -1,8 +1,9 @@
 import config
 
 import random
+import threading
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import Column, ForeignKey, Integer, MetaData, Table, Text, bindparam, create_engine, text
 
 from sqlalchemy.exc import IntegrityError
 
@@ -14,6 +15,46 @@ import time
 
 # Set the location for the database
 DB_engine = create_engine(config.sqlalchemy_db_path)
+_corner_schema_engine = None
+_corner_schema_lock = threading.Lock()
+
+corner_metadata = MetaData()
+accounts_table = Table(
+    "accounts", corner_metadata,
+    Column("userID", Integer, primary_key=True)
+)
+profile_color_sets_table = Table(
+    "profileColorSets", corner_metadata,
+    Column("profileSetID", Integer, primary_key=True)
+)
+cafe_corners_table = Table(
+    "cafeCorners", corner_metadata,
+    Column("cornerID", Integer, primary_key=True, autoincrement=True),
+    Column("userID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
+    Column("cornerName", Text),
+    Column("cornerDescription", Text),
+    Column("cornerBanner", Text),
+    Column("cornerColorTheme", Integer, ForeignKey("profileColorSets.profileSetID", ondelete="SET NULL")),
+    Column("cornerURLEnabled", Integer),
+    Column("cornerURL", Text),
+    Column("creationDate", Integer)
+)
+cafe_corner_members_table = Table(
+    "cafeCornerMembers", corner_metadata,
+    Column("cornerID", Integer, ForeignKey("cafeCorners.cornerID", ondelete="CASCADE"), primary_key=True),
+    Column("userID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), primary_key=True),
+    Column("role", Text, nullable=False),
+    Column("joinedDate", Integer)
+)
+corner_invitations_table = Table(
+    "cornerInvitations", corner_metadata,
+    Column("invitationID", Integer, primary_key=True, autoincrement=True),
+    Column("cornerID", Integer, ForeignKey("cafeCorners.cornerID", ondelete="CASCADE"), nullable=False),
+    Column("inviterUserID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
+    Column("invitedUserID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
+    Column("invitationStatus", Text, nullable=False, default="pending"),
+    Column("createdAt", Integer, nullable=False)
+)
 
 
 def connect_to_database():
@@ -472,27 +513,355 @@ def fetch_search_results(searchType, searchQueryForDB, userID):
 
 def fetch_account_standing(userID):
     """Fetches the account standing for a given userID"""
-    conn = connect_to_database()
+    with connect_to_database() as conn:
+        result = conn.execute(
+            text("SELECT accountStanding FROM accounts WHERE userID = :userID"),
+            {"userID": userID}
+        )
+        row = result.first()
+        return row[0] if row else None
 
-    result = conn.execute(text("SELECT accountStanding FROM accounts WHERE userID = :userID"), {"userID": userID})
-    accountStanding = result.fetchone()[0]
 
-    return accountStanding
+def initialize_corner_schema():
+    """Create the Corner tables when upgrading an existing database."""
+    global _corner_schema_engine
+    with _corner_schema_lock:
+        if _corner_schema_engine is DB_engine:
+            return
+        corner_metadata.create_all(
+            DB_engine,
+            tables=[cafe_corners_table, cafe_corner_members_table, corner_invitations_table]
+        )
+        _corner_schema_engine = DB_engine
+
+
+def fetch_corners_for_explore():
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cafeCorners.cornerID, cafeCorners.cornerName, cafeCorners.cornerDescription,
+                   cafeCorners.cornerBanner, cafeCorners.cornerURLEnabled, cafeCorners.cornerURL,
+                   accounts.username AS creatorUsername,
+                   COALESCE(memberCounts.memberCount, 0) AS memberCount
+            FROM cafeCorners
+            JOIN accounts ON cafeCorners.userID = accounts.userID
+            LEFT JOIN (
+                SELECT cornerID, COUNT(userID) AS memberCount
+                FROM cafeCornerMembers
+                GROUP BY cornerID
+            ) AS memberCounts ON memberCounts.cornerID = cafeCorners.cornerID
+            ORDER BY cafeCorners.creationDate DESC, cafeCorners.cornerID DESC
+        """))
+        return result.mappings().all()
+
+
+def fetch_corners_for_user(userID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cafeCorners.cornerID, cafeCorners.cornerName, cafeCorners.cornerDescription,
+                   cafeCorners.cornerBanner, cafeCorners.cornerURLEnabled, cafeCorners.cornerURL,
+                   accounts.username AS creatorUsername,
+                   COALESCE(memberCounts.memberCount, 0) AS memberCount
+            FROM cafeCornerMembers AS userMembers
+            JOIN cafeCorners ON userMembers.cornerID = cafeCorners.cornerID
+            JOIN accounts ON cafeCorners.userID = accounts.userID
+            LEFT JOIN (
+                SELECT cornerID, COUNT(userID) AS memberCount
+                FROM cafeCornerMembers
+                GROUP BY cornerID
+            ) AS memberCounts ON memberCounts.cornerID = cafeCorners.cornerID
+            WHERE userMembers.userID = :userID
+            ORDER BY cafeCorners.creationDate DESC, cafeCorners.cornerID DESC
+        """), {"userID": userID})
+        return result.mappings().all()
+
+
+def fetch_corner_card_members(cornerIDs):
+    if not cornerIDs:
+        return {}
+
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cafeCornerMembers.cornerID, accounts.userID, accounts.username,
+                   profiles.profilePicture, profileColorSets.profilePictureBorderColor
+            FROM cafeCornerMembers
+            JOIN accounts ON cafeCornerMembers.userID = accounts.userID
+            LEFT JOIN profiles ON profiles.userID = accounts.userID
+            LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+            WHERE cafeCornerMembers.cornerID IN :cornerIDs
+            ORDER BY cafeCornerMembers.cornerID,
+                     CASE WHEN cafeCornerMembers.role = 'Creator' THEN 0 ELSE 1 END,
+                     LOWER(accounts.username)
+        """).bindparams(bindparam("cornerIDs", expanding=True)), {"cornerIDs": cornerIDs})
+        membersByCorner = {cornerID: [] for cornerID in cornerIDs}
+        for member in result.mappings():
+            members = membersByCorner[member["cornerID"]]
+            if len(members) < 4:
+                members.append(member)
+        return membersByCorner
+
+
+def fetch_corner_by_id(cornerID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cafeCorners.*, accounts.username AS creatorUsername,
+                   COALESCE(memberCounts.memberCount, 0) AS memberCount
+            FROM cafeCorners
+            JOIN accounts ON cafeCorners.userID = accounts.userID
+            LEFT JOIN (
+                SELECT cornerID, COUNT(userID) AS memberCount
+                FROM cafeCornerMembers
+                GROUP BY cornerID
+            ) AS memberCounts ON memberCounts.cornerID = cafeCorners.cornerID
+            WHERE cafeCorners.cornerID = :cornerID
+        """), {"cornerID": cornerID})
+        return result.mappings().first()
+
+
+def fetch_corner_by_url(cornerURL):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cafeCorners.*, accounts.username AS creatorUsername,
+                   COALESCE(memberCounts.memberCount, 0) AS memberCount
+            FROM cafeCorners
+            JOIN accounts ON cafeCorners.userID = accounts.userID
+            LEFT JOIN (
+                SELECT cornerID, COUNT(userID) AS memberCount
+                FROM cafeCornerMembers
+                GROUP BY cornerID
+            ) AS memberCounts ON memberCounts.cornerID = cafeCorners.cornerID
+            WHERE cafeCorners.cornerURLEnabled = 1
+              AND LOWER(cafeCorners.cornerURL) = LOWER(:cornerURL)
+        """), {"cornerURL": cornerURL})
+        return result.mappings().first()
+
+
+def fetch_corner_members(cornerID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT accounts.userID, accounts.username, profiles.profilePicture,
+                   profileColorSets.profilePictureBorderColor,
+                   profiles.channelURLEnabled, profiles.channelURL, cafeCornerMembers.role,
+                   cafeCornerMembers.joinedDate
+            FROM cafeCornerMembers
+            JOIN accounts ON cafeCornerMembers.userID = accounts.userID
+            LEFT JOIN profiles ON profiles.userID = accounts.userID
+            LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+            WHERE cafeCornerMembers.cornerID = :cornerID
+            ORDER BY CASE WHEN cafeCornerMembers.role = 'Creator' THEN 0 ELSE 1 END,
+                     LOWER(accounts.username)
+        """), {"cornerID": cornerID})
+        return result.mappings().all()
+
+
+def create_corner(userID, cornerName, cornerDescription, cornerURLEnabled, cornerURL):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        with conn.begin():
+            if cornerURLEnabled:
+                existingURL = conn.execute(text("""
+                    SELECT cornerID FROM cafeCorners
+                    WHERE cornerURLEnabled = 1 AND LOWER(cornerURL) = LOWER(:cornerURL)
+                """), {"cornerURL": cornerURL}).first()
+                if existingURL:
+                    return None
+
+            result = conn.execute(cafe_corners_table.insert().values({
+                "userID": userID,
+                "cornerName": cornerName,
+                "cornerDescription": cornerDescription,
+                "cornerURLEnabled": int(cornerURLEnabled),
+                "cornerURL": cornerURL if cornerURLEnabled else None,
+                "creationDate": int(time.time())
+            }))
+            cornerID = result.inserted_primary_key[0]
+            conn.execute(text("""
+                INSERT INTO cafeCornerMembers (cornerID, userID, role, joinedDate)
+                VALUES (:cornerID, :userID, 'Creator', :joinedDate)
+            """), {"cornerID": cornerID, "userID": userID, "joinedDate": int(time.time())})
+            return cornerID
+
+
+def fetch_corner_owner(cornerID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT userID FROM cafeCorners WHERE cornerID = :cornerID
+        """), {"cornerID": cornerID})
+        row = result.first()
+        return row[0] if row else None
+
+
+def create_corner_invitation(cornerID, inviterUserID, invitedUsername):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        with conn.begin():
+            corner = conn.execute(text("""
+                SELECT cornerName, userID FROM cafeCorners WHERE cornerID = :cornerID
+            """), {"cornerID": cornerID}).first()
+            if not corner or corner[1] != inviterUserID:
+                return "not_owner"
+
+            invitee = conn.execute(text("""
+                SELECT userID, accountStanding FROM accounts
+                WHERE username = :username
+            """), {"username": invitedUsername}).first()
+            if not invitee or invitee[1] == "Suspended":
+                return "user_not_found"
+            invitedUserID = invitee[0]
+            if invitedUserID == inviterUserID:
+                return "already_member"
+
+            membership = conn.execute(text("""
+                SELECT 1 FROM cafeCornerMembers
+                WHERE cornerID = :cornerID AND userID = :userID
+            """), {"cornerID": cornerID, "userID": invitedUserID}).first()
+            if membership:
+                return "already_member"
+
+            pending = conn.execute(text("""
+                SELECT 1 FROM cornerInvitations
+                WHERE cornerID = :cornerID AND invitedUserID = :userID
+                  AND invitationStatus = 'pending'
+            """), {"cornerID": cornerID, "userID": invitedUserID}).first()
+            if pending:
+                return "already_invited"
+
+            inviterUsername = conn.execute(text("""
+                SELECT username FROM accounts WHERE userID = :userID
+            """), {"userID": inviterUserID}).scalar_one()
+            conn.execute(text("""
+                INSERT INTO cornerInvitations
+                    (cornerID, inviterUserID, invitedUserID, invitationStatus, createdAt)
+                VALUES (:cornerID, :inviterUserID, :invitedUserID, 'pending', :createdAt)
+            """), {
+                "cornerID": cornerID,
+                "inviterUserID": inviterUserID,
+                "invitedUserID": invitedUserID,
+                "createdAt": int(time.time())
+            })
+            conn.execute(text("""
+                INSERT INTO notifications
+                    (notificationRecipientID, notificationSenderID, notificationTitle,
+                     notificationDescription, notificationDateTime, notificationItem,
+                     notificationImage, notificationRead)
+                VALUES (:recipientID, :senderID, :title, :description, :createdAt,
+                        :item, 'None', 0)
+            """), {
+                "recipientID": invitedUserID,
+                "senderID": inviterUserID,
+                "title": "Corner invitation",
+                "description": f"{inviterUsername} invited you to join {corner[0]}",
+                "createdAt": int(time.time()),
+                "item": f"corner-invite:{cornerID}"
+            })
+            return "invited"
+
+
+def fetch_pending_corner_invitations(userID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT cornerInvitations.cornerID, cafeCorners.cornerName,
+                   inviter.username AS inviterUsername, inviterProfile.profilePicture,
+                   inviterColors.profilePictureBorderColor
+            FROM cornerInvitations
+            JOIN cafeCorners ON cafeCorners.cornerID = cornerInvitations.cornerID
+            JOIN accounts AS inviter ON inviter.userID = cornerInvitations.inviterUserID
+            LEFT JOIN profiles AS inviterProfile ON inviterProfile.userID = inviter.userID
+            LEFT JOIN profileColorSets AS inviterColors
+                ON inviterProfile.profileColorTheme = inviterColors.profileSetID
+            WHERE cornerInvitations.invitedUserID = :userID
+              AND cornerInvitations.invitationStatus = 'pending'
+            ORDER BY cornerInvitations.createdAt DESC, cornerInvitations.invitationID DESC
+        """), {"userID": userID})
+        return result.mappings().all()
+
+
+def accept_corner_invitation(userID, cornerID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        with conn.begin():
+            invitation = conn.execute(text("""
+                SELECT invitationID FROM cornerInvitations
+                WHERE cornerID = :cornerID AND invitedUserID = :userID
+                  AND invitationStatus = 'pending'
+                ORDER BY invitationID DESC
+            """), {"cornerID": cornerID, "userID": userID}).first()
+            if not invitation:
+                return False
+
+            membership = conn.execute(text("""
+                SELECT 1 FROM cafeCornerMembers
+                WHERE cornerID = :cornerID AND userID = :userID
+            """), {"cornerID": cornerID, "userID": userID}).first()
+            if not membership:
+                conn.execute(text("""
+                    INSERT INTO cafeCornerMembers (cornerID, userID, role, joinedDate)
+                    VALUES (:cornerID, :userID, 'Member', :joinedDate)
+                """), {"cornerID": cornerID, "userID": userID, "joinedDate": int(time.time())})
+            conn.execute(text("""
+                UPDATE cornerInvitations SET invitationStatus = 'accepted'
+                WHERE cornerID = :cornerID AND invitedUserID = :userID
+                  AND invitationStatus = 'pending'
+            """), {"cornerID": cornerID, "userID": userID})
+            conn.execute(text("""
+                UPDATE notifications SET notificationRead = 1
+                WHERE notificationRecipientID = :userID AND notificationItem = :item
+            """), {"userID": userID, "item": f"corner-invite:{cornerID}"})
+            return True
+
+
+def decline_corner_invitation(userID, cornerID):
+    initialize_corner_schema()
+    with connect_to_database() as conn:
+        with conn.begin():
+            result = conn.execute(text("""
+                UPDATE cornerInvitations SET invitationStatus = 'declined'
+                WHERE cornerID = :cornerID AND invitedUserID = :userID
+                  AND invitationStatus = 'pending'
+            """), {"cornerID": cornerID, "userID": userID})
+            if result.rowcount:
+                conn.execute(text("""
+                    UPDATE notifications SET notificationRead = 1
+                    WHERE notificationRecipientID = :userID AND notificationItem = :item
+                """), {"userID": userID, "item": f"corner-invite:{cornerID}"})
+            return result.rowcount > 0
 
 
 def fetch_admin_accounts():
-    """Fetch account identifiers, names, standings, and assigned role names."""
+    """Fetch account details, profile pictures, standings, and assigned role names."""
     with connect_to_database() as conn:
-        result = conn.execute(text("""
+        accounts = conn.execute(text("""
             SELECT accounts.userID, accounts.username, accounts.accountStanding,
-                   COALESCE(GROUP_CONCAT(roles.roleName, ', '), '') AS roleNames
+                   profiles.profilePicture, profileColorSets.profilePictureBorderColor
             FROM accounts
-            LEFT JOIN user_roles ON accounts.userID = user_roles.userID
-            LEFT JOIN roles ON user_roles.roleID = roles.roleID
-            GROUP BY accounts.userID, accounts.username, accounts.accountStanding
-            ORDER BY accounts.username COLLATE NOCASE
-        """))
-        return result.mappings().all()
+            LEFT JOIN profiles ON profiles.userID = accounts.userID
+            LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
+            ORDER BY LOWER(accounts.username)
+        """)).mappings().all()
+        roles = conn.execute(text("""
+            SELECT user_roles.userID, roles.roleName
+            FROM user_roles
+            JOIN roles ON user_roles.roleID = roles.roleID
+            ORDER BY user_roles.userID, roles.roleID
+        """)).fetchall()
+        roleNamesByUser = {}
+        for userID, roleName in roles:
+            roleNamesByUser.setdefault(userID, []).append(roleName)
+
+        return [
+            {
+                **dict(account),
+                "roleNames": ", ".join(roleNamesByUser.get(account["userID"], []))
+            }
+            for account in accounts
+        ]
 
 
 def suspend_user_account(userID):
@@ -1480,6 +1849,5 @@ def fetch_user_role(userID):
             JOIN roles ON user_roles.roleID = roles.roleID
             WHERE user_roles.userID = :userID
             ORDER BY CASE WHEN roles.roleName = 'Admin' THEN 0 ELSE 1 END, roles.roleID
-            LIMIT 1
         """), {"userID": userID})
         return result.mappings().first()

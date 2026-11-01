@@ -2,25 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% include "components/css.html" %}
-    <title>cafeVideo - Corners</title>
+    <title>cafeVideo - My Corners</title>
     {% include "components/scripts.html" %}
 </head>
 <body>
     {% include "components/navbar.html" %}
-    {% include "components/notificationsPanel.html" %}
+    {% if username %}
+        {% include "components/notificationsPanel.html" %}
+    {% endif %}
     <div class="cafe-main-body">
         {% include "components/sidebar.html" %}
-        <div class="cafe-video-list-body">
-            {% if username %}
-                <div class="cafe-video-list-contents-liked-videos">
-                    <p class="cafe-video-list-title">cafeCorners</p>
-                    <h1>You are not part of a cafeCorner</h1>
-                    <h2>Create one and it will be displayed here.</h2>
+        <main class="cafe-video-list-body">
+            <section class="corner-page cafe-profile-list-contents-videos">
+                <p class="cafe-video-list-title corner-page-title">My Corners</p>
+                <div class="corner-page-actions">
+                    <a class="corner-action-link" href="{{ url_for('cornersExplore') }}">Explore Corners</a>
+                    <a class="corner-action-link" href="{{ url_for('cornerCreate') }}">Create a Corner</a>
                 </div>
-            {% endif %}
-        </div>
+                {% if corners %}
+                    <div class="corner-card-grid">
+                        {% for corner in corners %}
+                            <a class="corner-card" href="{{ url_for('cornerProfileByURL', cornerURL=corner['cornerURL']) if corner['cornerURLEnabled'] else url_for('cornerProfileByID', id=corner['cornerID']) }}">
+                                {% if corner["cornerBanner"] %}
+                                    <div class="corner-card-banner">
+                                        <img src="{{ url_for('static', filename='profile/banner/' + corner['cornerBanner']) }}" alt="">
+                                    </div>
+                                {% else %}
+                                    {% set card_members = corner_members.get(corner["cornerID"], []) %}
+                                    <div class="corner-card-member-grid">
+                                        {% for slot in range(4) %}
+                                            {% if corner["memberCount"] > 4 and slot == 3 %}
+                                                <span class="corner-card-member-placeholder corner-card-member-placeholder-more">+</span>
+                                            {% elif slot < card_members|length %}
+                                                {% set member = card_members[slot] %}
+                                                <img src="{{ url_for('static', filename='profile/pfp/' + (member['profilePicture'] or 'profilepicturetest.png')) }}" style="border-color: {{ member['profilePictureBorderColor'] or '#C78A4B' }} !important;" alt="{{ member['username'] }}">
+                                            {% else %}
+                                                <span class="corner-card-member-placeholder">?</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="corner-card-details">
+                                    <h2>{{ corner["cornerName"] }}</h2>
+                                    <span>Created by {{ corner["creatorUsername"] }} · {{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="cafe-not-found">
+                        <h2>You are not part of a Corner yet</h2>
+                        <p>Ask a Corner creator to invite you, or start a Corner of your own.</p>
+                    </div>
+                {% endif %}
+            </section>
+        </main>
     </div>
-<!-- Rename to cafeChannels -->
 </body>
 </html>

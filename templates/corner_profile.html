@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/css.html" %}
+    <title>cafeVideo - {{ corner["cornerName"] }}</title>
+    {% include "components/scripts.html" %}
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% if username %}
+        {% include "components/notificationsPanel.html" %}
+    {% endif %}
+    <div class="cafe-main-body">
+        {% include "components/sidebar.html" %}
+        <main class="cafe-video-list-body">
+            <section class="corner-profile">
+                <header class="cafe-profile-list-contents-header corner-profile-header">
+                    <div class="corner-profile-banner">
+                        <img class="cafe-profile-banner" src="{{ url_for('static', filename='profile/banner/' + (corner['cornerBanner'] or 'profilebannertemplate.png')) }}" alt="">
+                    </div>
+                    <div class="corner-profile-titlebar">
+                        <div>
+                            <h1>{{ corner["cornerName"] }}</h1>
+                            <p>Created by {{ corner["creatorUsername"] }} · {{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</p>
+                        </div>
+                        {% if isCornerCreator %}
+                            <span class="corner-creator-badge">Creator</span>
+                        {% endif %}
+                    </div>
+                    <div class="cafe-profile-showcases-row corner-profile-showcases">
+                        <div class="cafe-profile-showcase-small corner-profile-description">
+                            <div class="cafe-profile-showcase-bio-title-layout">
+                                <p class="cafe-profile-showcase-bio-title">About this Corner</p>
+                            </div>
+                            <div class="cafe-profile-showcase-bio-description">
+                                <p>{{ corner["cornerDescription"] or "A cafeVideo Corner" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="corner-message corner-message-{{ category }}" role="status">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
+
+                {% if isCornerCreator %}
+                    <form class="corner-invite-form" action="{{ url_for('cornerInvite', cornerID=corner['cornerID']) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ corner_csrf_token }}">
+                        <label for="inviteUsername">Invite a creator by username</label>
+                        <div>
+                            <input id="inviteUsername" name="username" maxlength="80" required>
+                            <button class="corner-action-link" type="submit">Send invitation</button>
+                        </div>
+                    </form>
+                {% elif username and not isCornerMember %}
+                    <p class="corner-invitation-notice">Corner membership is by invitation. Check your notifications if the creator invited you.</p>
+                {% endif %}
+
+                <section class="cafe-profile-list-contents-videos corner-members">
+                    <div class="cafe-video-list-title corner-members-title">
+                        <p>Corner members</p>
+                        <span>{{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</span>
+                    </div>
+                    {% if members %}
+                        <div class="corner-member-grid">
+                            {% for member in members %}
+                                <a class="corner-member-card" href="{{ url_for('redirectPage', channelURL=member['channelURL']) if member['channelURLEnabled'] else url_for('getAccountProfile', id=member['userID']) }}">
+                                    <img style="border-color: {{ member['profilePictureBorderColor'] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (member['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
+                                    <span>{{ member["username"] }}</span>
+                                    {% if member["role"] == "Creator" %}
+                                        <small>Corner creator</small>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>This Corner has no members yet.</p>
+                    {% endif %}
+                </section>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
