@@ -1,5 +1,5 @@
 -- Import into an empty MySQL 8+ database using a client configured for utf8mb4.
--- User/account data is intentionally not seeded; only application reference data is.
+-- User/account data is intentionally not seeded, only application reference data is.
 
 CREATE TABLE accounts (
     userID BIGINT NOT NULL AUTO_INCREMENT,
