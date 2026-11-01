@@ -27,6 +27,9 @@
                     <p class="cafe-account-settings-sidebar-title cafe-account-settings-sidebar-title-layout">Account Settings</p>
                     <a class="sidebar-navigation-buttons" href="{{ url_for('getAccountSettings') }}">Account</a>
                     <a class="sidebar-navigation-buttons" href="{{ url_for('editUserProfile') }}">Profile</a>
+                    {% if userRole and userRole["roleName"] == "Admin" %}
+                        <a class="sidebar-navigation-buttons" href="{{ url_for('adminPage') }}">Admin</a>
+                    {% endif %}
                     <a class="sidebar-navigation-buttons" href="{{ url_for('logout') }}">Logout</a>
                 </div>
                 {% if username %}

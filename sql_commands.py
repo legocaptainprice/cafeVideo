@@ -480,6 +480,33 @@ def fetch_account_standing(userID):
     return accountStanding
 
 
+def fetch_admin_accounts():
+    """Fetch account identifiers, names, standings, and assigned role names."""
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT accounts.userID, accounts.username, accounts.accountStanding,
+                   COALESCE(GROUP_CONCAT(roles.roleName, ', '), '') AS roleNames
+            FROM accounts
+            LEFT JOIN user_roles ON accounts.userID = user_roles.userID
+            LEFT JOIN roles ON user_roles.roleID = roles.roleID
+            GROUP BY accounts.userID, accounts.username, accounts.accountStanding
+            ORDER BY accounts.username COLLATE NOCASE
+        """))
+        return result.mappings().all()
+
+
+def suspend_user_account(userID):
+    """Suspend an account if it exists and is not already suspended."""
+    with connect_to_database() as conn:
+        with conn.begin():
+            result = conn.execute(text("""
+                UPDATE accounts
+                SET accountStanding = 'Suspended'
+                WHERE userID = :userID AND accountStanding != 'Suspended'
+            """), {"userID": userID})
+            return result.rowcount > 0
+
+
 def createAccount(username, hashed_password):
     conn = connect_to_database()
 
@@ -1446,23 +1473,13 @@ def fetch_video_api(videoID):
 def fetch_user_role(userID):
     """Fetches the roles assigned to the user"""
 
-    conn = connect_to_database()
-
-    result = conn.execute(text("""SELECT *
-                                  FROM user_roles
-                                  WHERE userID = :userID
-                                """),
-                          {"userID": userID})
-    userHasRole = result.mappings().first()
-
-    if userHasRole:
-        result = conn.execute(text("""SELECT *
-                                      FROM roles
-                                      WHERE roleID = :roleID
-                                        """),
-                              {"roleID": userHasRole["roleID"]})
-        userRole = result.mappings().first()
-
-        return userRole
-    else:
-        return None
+    with connect_to_database() as conn:
+        result = conn.execute(text("""
+            SELECT roles.*
+            FROM user_roles
+            JOIN roles ON user_roles.roleID = roles.roleID
+            WHERE user_roles.userID = :userID
+            ORDER BY CASE WHEN roles.roleName = 'Admin' THEN 0 ELSE 1 END, roles.roleID
+            LIMIT 1
+        """), {"userID": userID})
+        return result.mappings().first()

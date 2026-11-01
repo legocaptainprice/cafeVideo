@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort, send_file
+import hmac
 import os
+import secrets
 import sql_commands
 import config
 import manifest
@@ -69,6 +71,19 @@ def read_markdown_files(markdown_file, mode):
             return markdown_content
         else:
             return content
+
+
+def require_admin():
+    userID = session.get("userID")
+
+    if userID is None:
+        abort(403)
+
+    userRole = sql_commands.fetch_user_role(userID)
+    if not userRole or userRole["roleName"] != "Admin":
+        abort(403)
+
+    return userID
 
 
 @cafe.context_processor
@@ -691,6 +706,38 @@ def getAccountSettings():
                                accountStanding=accountStanding)
     else:
         return redirect(url_for('indexPage'))
+
+
+@cafe.route('/admin')
+def adminPage():
+    require_admin()
+    session.setdefault("admin_csrf_token", secrets.token_urlsafe(32))
+
+    return render_template(
+        "admin.html",
+        username=session.get("username"),
+        accounts=sql_commands.fetch_admin_accounts(),
+        admin_csrf_token=session["admin_csrf_token"]
+    )
+
+
+@cafe.route('/admin/users/<int:targetUserID>/suspend', methods=["POST"])
+def suspendAccount(targetUserID):
+    userID = require_admin()
+    submittedToken = request.form.get("csrf_token", "")
+    sessionToken = session.get("admin_csrf_token", "")
+
+    if not sessionToken or not hmac.compare_digest(submittedToken, sessionToken):
+        abort(400)
+
+    if targetUserID == userID:
+        flash("You cannot suspend your own account.", "error")
+    elif sql_commands.suspend_user_account(targetUserID):
+        flash("The account has been suspended.", "success")
+    else:
+        flash("The account was not found or is already suspended.", "error")
+
+    return redirect(url_for("adminPage"))
 
 
 @cafe.route('/confirmAccountEdit', methods=["POST"])
