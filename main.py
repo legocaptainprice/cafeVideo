@@ -228,7 +228,7 @@ def loginAuthAPI():
 
         return cafe.redirect(url_for('loginPage', error="Invalid username or password"))
 
-    return cafe.redirect('/login.html', error=None)
+    return redirect(url_for("loginPage"))
 
 
 @cafe.route('/registerAccount', methods=['POST'])
@@ -276,66 +276,63 @@ def upload():
 @cafe.route('/uploadVideo', methods=['POST'])
 def uploadVideo():
     """Function to retrieve video details"""
-    if request.method == 'POST':
-        if 'video' not in request.files:
-            return 'No file part', 400
-        videoFile = request.files['video']
-        thumbnail = request.files['thumbnail']
-        defaultThumbnail = 'videotemplate.png'
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+    if sql_commands.fetch_account_standing(userID) != "Active":
+        abort(403)
 
+    if request.method == 'POST':
+        videoFile = request.files.get("video")
+        if videoFile is None:
+            return 'No file part', 400
         if videoFile.filename == '':
             return 'No selected file', 400
+        if not allowedFiletypes(videoFile.filename, cafe.config['ALLOWED_EXTENSIONS']):
+            return 'Unsupported video file type', 400
 
-        if thumbnail.filename == '':
-            thumbnail.filename = defaultThumbnail
+        thumbnail = request.files.get("thumbnail")
+        defaultThumbnail = 'videotemplate.png'
+        thumbnailFilename = defaultThumbnail
+        if thumbnail and thumbnail.filename:
+            if not allowedFiletypes(thumbnail.filename, cafe.config['ALLOWED_THUMBNAIL_EXTENSIONS']):
+                return 'Unsupported thumbnail file type', 400
+            thumbnailFilename = secure_filename(thumbnail.filename)
 
-        if 'thumbnail' not in request.files:
-            thumbnail.filename = defaultThumbnail
+        filename = secure_filename(videoFile.filename)
+        filepath = os.path.join(cafe.config['UPLOAD_FOLDER'], filename)
+        videoFile.save(filepath)
+        if thumbnail and thumbnail.filename:
+            thumbnailPath = os.path.join(cafe.config['UPLOAD_THUMBNAILS_FOLDER'], thumbnailFilename)
+            thumbnail.save(thumbnailPath)
 
-        if videoFile and allowedFiletypes(videoFile.filename, cafe.config['ALLOWED_EXTENSIONS']):
-            # Upload the video file to its destination
-            filename = secure_filename(videoFile.filename)
-            filepath = os.path.join(cafe.config['UPLOAD_FOLDER'], filename)
-            videoFile.save(filepath)
-            # Upload the thumbnail file to its destination
-            if thumbnail != defaultThumbnail:
-                thumbnailFilename = secure_filename(thumbnail.filename)
-                thumbnailPath = os.path.join(cafe.config['UPLOAD_THUMBNAILS_FOLDER'], thumbnailFilename)
-                thumbnail.save(thumbnailPath)
-            else:
-                thumbnailFilename = secure_filename(thumbnail.filename)
-            userID = session.get('userID')
-            title = request.form['title']
-            description = request.form['description']
-            videoTags = request.form['videoTags']
-            # videoFile = request.form['videoURL']
+        title = request.form['title']
+        description = request.form['description']
+        videoTags = request.form['videoTags']
+        success, message = sql_commands.uploadVideoToDatabase(
+            userID, title, description, videoTags, filename, thumbnailFilename
+        )
 
-            success, message = sql_commands.uploadVideoToDatabase(userID, title, description, videoTags, filename,
-                                                                  thumbnailFilename)
-
-            if success:
-                return redirect(url_for('indexPage'))
-            else:
-                return render_template('upload.html', error=message)
+        if success:
+            return redirect(url_for('indexPage'))
+        return render_template('upload.html', error=message)
 
 
 @cafe.route('/watch')
 def watchPage():
     """Function to display the watch page"""
     videoID = request.args.get('v')
-    session['redirectToVideoID'] = videoID
     username = session.get('username')
     userID = session.get('userID')
 
     if videoID:
 
-        video = sql_commands.fetch_video_for_watch_page(videoID)[0]
-
-        accountStanding = sql_commands.fetch_video_for_watch_page(videoID)[1]
+        video, accountStanding = sql_commands.fetch_video_for_watch_page(videoID)
 
         print(video)
 
         if video:
+            session['redirectToVideoID'] = videoID
             # If there is a video go to the video
             viewCount = sql_commands.fetch_video_view_count_for_watch_page(videoID)
 

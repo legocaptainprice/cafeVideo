@@ -410,7 +410,11 @@ def fetch_video_for_watch_page(videoID):
                     JOIN accounts ON accounts.userID = videos.userID
                     WHERE videoID = :videoID
                     """), {"videoID": videoID})
-    accountStanding_check = result.fetchone()[0]
+    accountStanding_row = result.fetchone()
+    if not video or not accountStanding_row:
+        conn.close()
+        return None, None
+    accountStanding_check = accountStanding_row[0]
 
     conn.close()
 
@@ -1604,9 +1608,9 @@ def uploadVideoToDatabase(userID, title, description, videoTags, filename, thumb
     datetimeOfPublishedVideo = int(time.time())
 
     try:
-        conn.execute(text("""INSERT INTO videos (userID, videoTitle, videoDescription, videoTags, videoFile, 
-                                videoThumbnail, datetime) VALUES (:userID, :videoTitle, :videoDescription, :videoTags, 
-                                :videoFile, :videoThumbnail, :datetime)"""),
+        conn.execute(text("""INSERT INTO videos (userID, videoTitle, videoDescription, videoTags, videoFile,
+                                videoThumbnail, datetime, views) VALUES (:userID, :videoTitle, :videoDescription,
+                                :videoTags, :videoFile, :videoThumbnail, :datetime, 0)"""),
                      {"userID": userID, "videoTitle": title, "videoDescription": description, "videoTags":
                          videoTags, "videoFile": filename, "videoThumbnail": thumbnailFilename,
                       "datetime": datetimeOfPublishedVideo})
@@ -1823,6 +1827,9 @@ def fetch_video_api(videoID):
                                   FROM videos 
                                   WHERE videoID = :videoID"""), {"videoID": videoID})
     video = result.fetchone()
+    if not video:
+        conn.close()
+        return None
 
     videoCreator = video[1]
 

@@ -1,20 +1,28 @@
 # cafeVideo
 A lofi cafe-themed video sharing platform, designed for local or community instances.
 
-## Disclaimer
-cafeVideo is still in early development, all features are in their early and experimental stages. The project is not production ready. Everything seen and developed is subject to change.
+## Project status
+cafeVideo is an actively developed, experimental video-sharing application. The current codebase includes account registration and login, profile and theme customization, video upload and playback, comments and reactions, subscriptions, playlists and saves, notifications, admin account suspension, and invite-only Corners with public profiles and discovery.
 
-The project's source code is not representative of a complete or production ready application. The current stage of the project still contains missing features, incomplete functionality, bugs, glitches, security issues and missing safeguards. The project still has incomplete privacy protections including data protection, security, regulatory or other legally required functionality that could be necessary for particular deployment or intended uses. 
+The application is still under development. Features and interfaces may change, and the project has not been assessed or prepared for production use. The integration suite checks every currently registered GET and POST route and exercises important end-to-end workflows; this does not establish that every behavior, deployment environment, security control, privacy obligation, or regulatory requirement is complete.
 
-Anyone independently obtaining, modifying, deploying or operating the software is responsible for assessing its suitability for their intended use and addressing the requirements applicable to their own deployment.
-
-The project is provided under the Apache License, Version 2.0. Nothing in this notice is intended to replace, modify or override the terms of that licence or any applicable statutory rights or obligations.
+Anyone obtaining, modifying, deploying, or operating the software is responsible for assessing its suitability and addressing the requirements applicable to their use. The project is provided under the Apache License, Version 2.0; this notice does not replace or modify the license or any applicable statutory rights or obligations.
 
 
 ## AI Disclosure
-cafeVideo is primarily developed independently by its author. AI tools have been used in an assistive capacity for technical guidance, troubleshooting, explanations and occasional code suggestions. The author independently implements, adapts, reviews and integrates the majority of the project's functionality.
+AI coding assistants have been used to explore the codebase, generate and modify application code, troubleshoot issues, and write or update tests and documentation. This includes implementation work on application features and interface changes; AI use has therefore gone beyond explanations or occasional code suggestions.
+
+The project author provides direction, reviews and tests proposed changes, and decides what to integrate. AI-generated output can be incomplete or incorrect, and the project has not been independently audited. The author remains responsible for the project and its releases.
+
+## Automated tests
+GitHub Actions runs the Flask integration suite on pull requests targeting `main`, pushes to `main`, and manual dispatch. Tests use a temporary copy of the bundled database and Flask's test client to check anonymous and authenticated route behavior, account registration and login, uploads, profile editing, video interactions, playlists, notifications, Corners, admin suspension, and video API/streaming routes. Test uploads are cleaned up after each run.
+
+To run the suite locally, install the application requirements and `pytest`, set `SECRET_CAFE_KEY`, then run:
+
+```shell
+python -m pytest -v .github/workflows/github_actions.py
+```
 
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.
-

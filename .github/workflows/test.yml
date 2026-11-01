@@ -1,7 +1,9 @@
-name: cafeVideo Deployment Tests
+name: cafeVideo Application Tests
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -30,8 +32,8 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run automated tests
-        run: pytest -vv -s .github/workflows/github_actions.py
+      - name: Run application integration tests
+        run: python -m pytest -v .github/workflows/github_actions.py
 
       - name: Package tested commit
         if: success()
