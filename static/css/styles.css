@@ -98,16 +98,21 @@
 .admin-page {
     width: 100%;
     box-sizing: border-box;
+    color: white;
 }
 
 .admin-page-title {
     width: 100%;
     box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
     align-items: center;
+    font-family: 'Roboto', sans-serif;
 }
 
 .admin-page-description {
-    color: #2e1f16;
+    color: white;
+    font-family: 'Roboto', sans-serif;
 }
 
 .admin-account-list {
@@ -125,12 +130,12 @@
     justify-content: space-between;
     gap: 16px;
     padding: 14px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid #C78A4B;
 }
 
 .admin-account-row strong,
 .admin-account-row span {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Roboto', sans-serif;
 }
 
 .admin-account-row:last-child {
@@ -153,7 +158,7 @@
 
 .admin-suspend-button {
     padding: 8px 12px;
-    border: 0;
+    border: 1px solid #C78A4B;
     border-radius: 5px;
     background: #8f3939;
     color: white;
@@ -177,6 +182,41 @@
 .corner-profile {
     width: 100%;
     box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+    color: white;
+}
+
+.corner-page h1,
+.corner-page h2,
+.corner-page h3,
+.corner-form-page h1,
+.corner-form-page h2,
+.corner-form-page h3,
+.corner-profile h1,
+.corner-profile h2,
+.corner-profile h3,
+.corner-page p,
+.corner-form-page p,
+.corner-profile p,
+.corner-page span,
+.corner-form-page span,
+.corner-profile span,
+.corner-page label,
+.corner-form-page label,
+.corner-profile label,
+.corner-page small,
+.corner-form-page small,
+.corner-profile small,
+.corner-page button,
+.corner-form-page button,
+.corner-profile button,
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page p,
+.admin-page span,
+.admin-page button {
+    font-family: 'Roboto', sans-serif;
 }
 
 .corner-page-actions {
@@ -189,13 +229,16 @@
 .corner-page-title {
     width: 100%;
     box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
     align-items: center;
+    font-family: 'Roboto', sans-serif;
 }
 
 .corner-action-link,
 .corner-secondary-link {
     display: inline-block;
-    border: 0;
+    border: 1px solid #C78A4B;
     border-radius: 5px;
     padding: 9px 14px;
     background: #3a4c4b;
@@ -223,10 +266,11 @@
 
 .corner-card {
     overflow: hidden;
-    border: 2px solid #3a4c4b;
-    border-radius: 7px;
-    background: #8A7A5E;
-    color: #2e1f16;
+    border: 2px solid #C78A4B;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    background: #3a4c4b;
+    color: white;
     text-decoration: none;
 }
 
@@ -244,6 +288,7 @@
 .corner-card h2,
 .corner-card p {
     margin: 0 0 8px;
+    color: white;
 }
 
 .corner-form {
@@ -316,6 +361,7 @@
     gap: 16px;
     margin: 10px 0 15px;
     padding: 10px;
+    border: 2px solid #C78A4B;
     border-radius: 5px;
     background: #C78A4B;
     color: white;
@@ -349,12 +395,16 @@
     overflow-wrap: anywhere;
 }
 
+.corner-profile-description .cafe-profile-showcase-bio-title-layout {
+    border-bottom-color: #C78A4B;
+}
+
 .corner-creator-badge {
     padding: 6px 10px;
-    border: 2px solid rgba(255, 255, 255, 0.7);
+    border: 2px solid #C78A4B;
     border-radius: 5px;
     background: #3a4c4b;
-    color: #2e1f16;
+    color: white;
 }
 
 .corner-invite-form {
@@ -368,7 +418,7 @@
     border-radius: 5px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     background: rgba(72, 82, 112, 0.1);
-    color: #2e1f16;
+    color: white;
 }
 
 .corner-invite-form > div,
@@ -380,13 +430,14 @@
 }
 
 .corner-invitation-notice {
-    color: #2e1f16;
+    color: white;
+    font-family: 'Roboto', sans-serif;
 }
 
 .corner-pending-invitations {
     width: 100%;
     margin: 12px 0 20px;
-    color: #2e1f16;
+    color: white;
 }
 
 .corner-pending-invitation {
@@ -404,6 +455,7 @@
 
 .corner-pending-invitation p {
     margin: 6px 0;
+    color: white;
 }
 
 .corner-pending-invitation a {
@@ -421,6 +473,13 @@
     box-sizing: border-box;
     align-items: center;
     justify-content: space-between;
+    font-family: 'Roboto', sans-serif;
+}
+
+.corner-members-title > p,
+.corner-members-title > span {
+    font-family: 'Roboto', sans-serif;
+    color: white;
 }
 
 .corner-members-title > p {
@@ -445,6 +504,7 @@
     background: #3a4c4b;
     color: white;
     text-decoration: none;
+    font-family: 'Roboto', sans-serif;
 }
 
 .corner-member-card img {
@@ -462,6 +522,13 @@
 
 .corner-message-success {
     color: #175c27;
+}
+
+.corner-message,
+.corner-message h1,
+.corner-message h2,
+.corner-message p {
+    font-family: 'Roboto', sans-serif;
 }
 
 .cafe-video-list-contents-recommended {

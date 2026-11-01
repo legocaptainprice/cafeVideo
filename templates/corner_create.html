@@ -14,7 +14,7 @@
         {% include "components/sidebar.html" %}
         <main class="cafe-video-list-body">
             <section class="corner-form-page cafe-profile-list-contents-videos">
-                <p class="cafe-profile-list-title corner-page-title">Create a Corner</p>
+                <p class="cafe-video-list-title corner-page-title">Create a Corner</p>
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% for category, message in messages %}
                         <p class="corner-message corner-message-{{ category }}" role="status">{{ message }}</p>
