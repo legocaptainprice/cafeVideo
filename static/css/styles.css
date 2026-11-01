@@ -293,7 +293,6 @@
 .corner-card-banner,
 .corner-card-member-grid {
     width: 100%;
-    overflow: hidden;
     border-radius: 5px;
 }
 
@@ -366,6 +365,7 @@
     justify-content: center;
     border: 2px solid #C78A4B;
     border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     color: white;
     font-size: 32px;
 }
@@ -542,53 +542,36 @@
     font-family: 'Roboto', sans-serif;
 }
 
-.corner-pending-invitation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    width: 99%;
-    box-sizing: border-box;
-    margin: 10px auto 0;
-    padding: 14px;
-    border: 2px solid #C78A4B;
-    border-radius: 5px;
-    background: #3a4c4b;
-    color: white;
-}
-
 .corner-notification-invitation,
 .corner-notification-invitation * {
     font-family: 'Roboto', sans-serif;
 }
 
-.corner-invitation-sender {
-    display: flex;
-    align-items: flex-start;
-    gap: 25px;
+.corner-notification-invitation .cafe-notifications-box-body-item-details {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    padding: 8px 0;
 }
 
-.corner-invitation-sender .cafe-notifications-box-body-profile-details {
-    flex: 0 0 75px;
-    margin: 10px 0 0 10px;
-}
-
-.corner-invitation-sender .cafe-watch-creator-profile-picture {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-}
-
-.corner-invitation-sender .cafe-watch-creator-profile-picture-image {
-    object-fit: cover;
-}
-
-.corner-pending-invitation p {
-    margin: 6px 0;
+.corner-notification-invitation .cafe-notifications-item-title {
+    margin: 0 0 8px;
+    font-weight: bold;
     color: white;
 }
 
-.corner-pending-invitation a {
+.corner-notification-invitation .cafe-notifications-item-description {
+    margin: 0 0 8px;
+    color: white;
+}
+
+.corner-notification-invitation a {
     color: #f0c08e;
+}
+
+.corner-notification-invitation .corner-invitation-actions {
+    align-content: center;
+    padding: 10px;
 }
 
 .corner-members {

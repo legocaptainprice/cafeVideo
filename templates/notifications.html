@@ -29,18 +29,16 @@
                         {% set visible_notifications = namespace(found=false) %}
                         {% if pending_corner_invitations %}
                             {% for invitation in pending_corner_invitations %}
-                                <div class="corner-pending-invitation corner-notification-invitation">
-                                    <div class="corner-invitation-sender">
-                                        <div class="cafe-notifications-box-body-profile-details">
-                                            <div class="cafe-watch-creator-profile-picture" style="border-color: {{ invitation['profilePictureBorderColor'] or '#C78A4B' }} !important;">
-                                                <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (invitation['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
-                                            </div>
+                                <div class="cafe-notifications-box-body-item cafe-notifications-box-body-item-override corner-notification-invitation">
+                                    <div class="cafe-notifications-box-body-profile-details">
+                                        <div class="cafe-watch-creator-profile-picture" style="border-color: {{ invitation['profilePictureBorderColor'] or '#C78A4B' }} !important;">
+                                            <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (invitation['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
                                         </div>
-                                        <div>
-                                            <strong>{{ invitation["cornerName"] }}</strong>
-                                            <p>{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
-                                            <a href="{{ url_for('cornerProfileByID', id=invitation['cornerID']) }}">View Corner</a>
-                                        </div>
+                                    </div>
+                                    <div class="cafe-notifications-box-body-item-details">
+                                        <p class="cafe-notifications-item-title">{{ invitation["cornerName"] }}</p>
+                                        <p class="cafe-notifications-item-description">{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
+                                        <a href="{{ url_for('cornerProfileByID', id=invitation['cornerID']) }}">View Corner</a>
                                     </div>
                                     <div class="corner-invitation-actions">
                                         <form action="{{ url_for('cornerJoin', cornerID=invitation['cornerID']) }}" method="POST">
