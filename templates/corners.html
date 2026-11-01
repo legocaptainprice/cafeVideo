@@ -34,7 +34,7 @@
                                     <div class="corner-card-member-grid">
                                         {% for slot in range(4) %}
                                             {% if corner["memberCount"] > 4 and slot == 3 %}
-                                                <span class="corner-card-member-placeholder">+</span>
+                                                <span class="corner-card-member-placeholder corner-card-member-placeholder-more">+</span>
                                             {% elif slot < card_members|length %}
                                                 {% set member = card_members[slot] %}
                                                 <img src="{{ url_for('static', filename='profile/pfp/' + (member['profilePicture'] or 'profilepicturetest.png')) }}" style="border-color: {{ member['profilePictureBorderColor'] or '#C78A4B' }} !important;" alt="{{ member['username'] }}">

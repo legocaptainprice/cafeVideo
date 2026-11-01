@@ -31,7 +31,11 @@
                             {% for invitation in pending_corner_invitations %}
                                 <div class="corner-pending-invitation corner-notification-invitation">
                                     <div class="corner-invitation-sender">
-                                        <img src="{{ url_for('static', filename='profile/pfp/' + (invitation['profilePicture'] or 'profilepicturetest.png')) }}" style="border-color: {{ invitation['profilePictureBorderColor'] or '#C78A4B' }} !important;" alt="">
+                                        <div class="cafe-notifications-box-body-profile-details">
+                                            <div class="cafe-watch-creator-profile-picture" style="border-color: {{ invitation['profilePictureBorderColor'] or '#C78A4B' }} !important;">
+                                                <img class="cafe-watch-creator-profile-picture-image" src="{{ url_for('static', filename='profile/pfp/' + (invitation['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
+                                            </div>
+                                        </div>
                                         <div>
                                             <strong>{{ invitation["cornerName"] }}</strong>
                                             <p>{{ invitation["inviterUsername"] }} invited you to join this Corner.</p>
