@@ -16,17 +16,28 @@
         {% include "components/sidebar.html" %}
         <main class="cafe-video-list-body">
             <section class="corner-profile">
-                <header class="corner-profile-header">
-                    <img class="corner-profile-banner" src="{{ url_for('static', filename='profile/banner/' + (corner['cornerBanner'] or 'profilebannertemplate.png')) }}" alt="">
-                    <div class="corner-profile-details">
+                <header class="cafe-profile-list-contents-header corner-profile-header">
+                    <div class="corner-profile-banner">
+                        <img class="cafe-profile-banner" src="{{ url_for('static', filename='profile/banner/' + (corner['cornerBanner'] or 'profilebannertemplate.png')) }}" alt="">
+                    </div>
+                    <div class="corner-profile-titlebar">
                         <div>
                             <h1>{{ corner["cornerName"] }}</h1>
                             <p>Created by {{ corner["creatorUsername"] }} · {{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</p>
-                            <p>{{ corner["cornerDescription"] or "A cafeVideo Corner" }}</p>
                         </div>
                         {% if isCornerCreator %}
                             <span class="corner-creator-badge">Creator</span>
                         {% endif %}
+                    </div>
+                    <div class="cafe-profile-showcases-row corner-profile-showcases">
+                        <div class="cafe-profile-showcase-small corner-profile-description">
+                            <div class="cafe-profile-showcase-bio-title-layout">
+                                <p class="cafe-profile-showcase-bio-title">About this Corner</p>
+                            </div>
+                            <div class="cafe-profile-showcase-bio-description">
+                                <p>{{ corner["cornerDescription"] or "A cafeVideo Corner" }}</p>
+                            </div>
+                        </div>
                     </div>
                 </header>
 
@@ -49,8 +60,11 @@
                     <p class="corner-invitation-notice">Corner membership is by invitation. Check your notifications if the creator invited you.</p>
                 {% endif %}
 
-                <section class="corner-members">
-                    <h2>Corner members</h2>
+                <section class="cafe-profile-list-contents-videos corner-members">
+                    <div class="cafe-profile-list-title corner-members-title">
+                        <p>Corner members</p>
+                        <span>{{ corner["memberCount"] }} member{{ "s" if corner["memberCount"] != 1 }}</span>
+                    </div>
                     {% if members %}
                         <div class="corner-member-grid">
                             {% for member in members %}

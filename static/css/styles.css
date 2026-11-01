@@ -96,17 +96,26 @@
 }
 
 .admin-page {
-    max-width: 1000px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.admin-page p {
+.admin-page-title {
+    width: 100%;
+    box-sizing: border-box;
+    align-items: center;
+}
+
+.admin-page-description {
     color: #2e1f16;
 }
 
 .admin-account-list {
     margin-top: 20px;
     background: rgba(58, 76, 75, 0.9);
-    border-radius: 8px;
+    border: 2px solid #C78A4B;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     color: white;
 }
 
@@ -119,7 +128,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.admin-account-row strong, span {
+.admin-account-row strong,
+.admin-account-row span {
     font-family: 'Poppins', sans-serif;
 }
 
@@ -166,7 +176,7 @@
 .corner-form-page,
 .corner-profile {
     width: 100%;
-    max-width: 1100px;
+    box-sizing: border-box;
 }
 
 .corner-page-actions {
@@ -174,6 +184,12 @@
     flex-wrap: wrap;
     gap: 10px;
     margin: 16px 0;
+}
+
+.corner-page-title {
+    width: 100%;
+    box-sizing: border-box;
+    align-items: center;
 }
 
 .corner-action-link,
@@ -234,10 +250,13 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-width: 600px;
+    width: 100%;
+    box-sizing: border-box;
     padding: 20px;
-    border-radius: 7px;
-    background: rgba(58, 76, 75, 0.9);
+    border: 2px solid #C78A4B;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    background: rgba(72, 82, 112, 0.1);
     color: white;
 }
 
@@ -276,45 +295,80 @@
 }
 
 .corner-profile-header {
+    width: 100%;
+    box-sizing: border-box;
     overflow: hidden;
-    border: 2px solid #C78A4B;
-    border-radius: 7px;
-    background: #3a4c4b;
-    color: white;
 }
 
 .corner-profile-banner {
-    display: block;
     width: 100%;
-    height: 220px;
-    object-fit: cover;
+    overflow: hidden;
 }
 
-.corner-profile-details {
+.corner-profile-banner .cafe-profile-banner {
+    display: block;
+}
+
+.corner-profile-titlebar {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 15px;
-    padding: 16px 20px;
+    gap: 16px;
+    margin: 10px 0 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background: #C78A4B;
+    color: white;
 }
 
-.corner-profile-details h1,
-.corner-profile-details p {
-    margin: 0 0 8px;
+.corner-profile-titlebar h1,
+.corner-profile-titlebar p {
+    margin: 0 0 5px;
+}
+
+.corner-profile-titlebar p {
+    margin-bottom: 0;
+    font-size: 0.9em;
+}
+
+.corner-profile-showcases {
+    margin: 0 0 5px;
+}
+
+.corner-profile-description {
+    flex: 1;
+    max-width: none;
+    height: auto;
+    min-height: 100px;
+}
+
+.corner-profile-description .cafe-profile-showcase-bio-description {
+    max-width: none;
+    height: auto;
+    min-height: 60px;
+    overflow-wrap: anywhere;
 }
 
 .corner-creator-badge {
     padding: 6px 10px;
-    border-radius: 12px;
-    background: #C78A4B;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+    background: #3a4c4b;
     color: #2e1f16;
 }
 
 .corner-invite-form {
     display: grid;
     gap: 8px;
-    max-width: 600px;
+    width: 100%;
+    box-sizing: border-box;
     margin: 16px 0;
+    padding: 14px;
+    border: 2px solid #C78A4B;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    background: rgba(72, 82, 112, 0.1);
+    color: #2e1f16;
 }
 
 .corner-invite-form > div,
@@ -330,7 +384,7 @@
 }
 
 .corner-pending-invitations {
-    max-width: 800px;
+    width: 100%;
     margin: 12px 0 20px;
     color: #2e1f16;
 }
@@ -343,7 +397,7 @@
     gap: 12px;
     padding: 14px;
     border: 2px solid #C78A4B;
-    border-radius: 6px;
+    border-radius: 5px;
     background: #3a4c4b;
     color: white;
 }
@@ -357,20 +411,37 @@
 }
 
 .corner-members {
-    margin-top: 24px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 16px;
 }
 
-.corner-members > h2 {
-    color: #2e1f16;
+.corner-members-title {
+    width: 100%;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.corner-members-title > p {
+    margin: 0;
+    line-height: 20px;
+}
+
+.corner-member-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 }
 
 .corner-member-card {
     display: grid;
-    justify-items: center;
+    grid-template-columns: 76px 1fr;
+    justify-items: start;
+    align-items: center;
     gap: 7px;
     padding: 14px;
     border: 2px solid #C78A4B;
-    border-radius: 7px;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     background: #3a4c4b;
     color: white;
     text-decoration: none;
@@ -380,8 +451,9 @@
     width: 76px;
     height: 76px;
     border: 2px solid #C78A4B;
-    border-radius: 50%;
+    border-radius: 5px;
     object-fit: cover;
+    grid-row: span 2;
 }
 
 .corner-message-error {

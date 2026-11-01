@@ -15,8 +15,8 @@
     <div class="cafe-main-body">
         {% include "components/sidebar.html" %}
         <main class="cafe-video-list-body">
-            <section class="corner-page">
-                <h1 class="cafe-video-list-title">My Corners</h1>
+            <section class="corner-page cafe-profile-list-contents-videos">
+                <p class="cafe-profile-list-title corner-page-title">My Corners</p>
                 <div class="corner-page-actions">
                     <a class="corner-action-link" href="{{ url_for('cornersExplore') }}">Explore Corners</a>
                     <a class="corner-action-link" href="{{ url_for('cornerCreate') }}">Create a Corner</a>
