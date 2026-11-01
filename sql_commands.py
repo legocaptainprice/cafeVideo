@@ -617,11 +617,13 @@ def fetch_corner_members(cornerID):
     with connect_to_database() as conn:
         result = conn.execute(text("""
             SELECT accounts.userID, accounts.username, profiles.profilePicture,
+                   profileColorSets.profilePictureBorderColor,
                    profiles.channelURLEnabled, profiles.channelURL, cafeCornerMembers.role,
                    cafeCornerMembers.joinedDate
             FROM cafeCornerMembers
             JOIN accounts ON cafeCornerMembers.userID = accounts.userID
             LEFT JOIN profiles ON profiles.userID = accounts.userID
+            LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
             WHERE cafeCornerMembers.cornerID = :cornerID
             ORDER BY CASE WHEN cafeCornerMembers.role = 'Creator' THEN 0 ELSE 1 END,
                      LOWER(accounts.username)
@@ -801,11 +803,14 @@ def decline_corner_invitation(userID, cornerID):
 
 
 def fetch_admin_accounts():
-    """Fetch account identifiers, names, standings, and assigned role names."""
+    """Fetch account details, profile pictures, standings, and assigned role names."""
     with connect_to_database() as conn:
         accounts = conn.execute(text("""
-            SELECT accounts.userID, accounts.username, accounts.accountStanding
+            SELECT accounts.userID, accounts.username, accounts.accountStanding,
+                   profiles.profilePicture, profileColorSets.profilePictureBorderColor
             FROM accounts
+            LEFT JOIN profiles ON profiles.userID = accounts.userID
+            LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
             ORDER BY LOWER(accounts.username)
         """)).mappings().all()
         roles = conn.execute(text("""

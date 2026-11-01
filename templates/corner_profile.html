@@ -69,7 +69,7 @@
                         <div class="corner-member-grid">
                             {% for member in members %}
                                 <a class="corner-member-card" href="{{ url_for('redirectPage', channelURL=member['channelURL']) if member['channelURLEnabled'] else url_for('getAccountProfile', id=member['userID']) }}">
-                                    <img src="{{ url_for('static', filename='profile/pfp/' + (member['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
+                                    <img style="border-color: {{ member['profilePictureBorderColor'] or '#C78A4B' }} !important;" src="{{ url_for('static', filename='profile/pfp/' + (member['profilePicture'] or 'profilepicturetest.png')) }}" alt="">
                                     <span>{{ member["username"] }}</span>
                                     {% if member["role"] == "Creator" %}
                                         <small>Corner creator</small>
