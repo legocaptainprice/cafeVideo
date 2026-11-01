@@ -60,8 +60,54 @@ jobs:
       display_version: ${{ steps.version.outputs.display_version }}
       release_tag: ${{ steps.version.outputs.release_tag }}
 
+  database-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: mysql
+            image: mysql:8.4
+            connection: mysql+pymysql://root:cafe_test_password@127.0.0.1:3306/cafevideo?charset=utf8mb4
+            health_options: --health-cmd="mysqladmin ping --silent -h localhost -pcafe_test_password" --health-interval=10s --health-timeout=5s --health-retries=10
+          - engine: postgresql
+            image: postgres:16
+            connection: postgresql+psycopg://postgres:cafe_test_password@127.0.0.1:5432/cafevideo
+            health_options: --health-cmd="pg_isready -U postgres -d cafevideo" --health-interval=10s --health-timeout=5s --health-retries=10
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: cafe_test_password
+          MYSQL_DATABASE: cafevideo
+          POSTGRES_PASSWORD: cafe_test_password
+          POSTGRES_DB: cafevideo
+        ports:
+          - 3306:3306
+          - 5432:5432
+        options: ${{ matrix.health_options }}
+    env:
+      CAFE_TEST_DATABASE_URL: ${{ matrix.connection }}
+      SECRET_CAFE_KEY: test-only-key-for-github-actions
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v6
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install application and database drivers
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest PyMySQL "psycopg[binary]"
+
+      - name: Run application integration tests on ${{ matrix.engine }}
+        run: python -m pytest -v .github/workflows/github_actions.py
+
   artifact:
-    needs: test
+    needs: [test, database-compatibility]
     runs-on: ubuntu-latest
     permissions:
       contents: read

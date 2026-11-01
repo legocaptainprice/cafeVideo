@@ -4,6 +4,7 @@ import random
 import threading
 
 from sqlalchemy import Column, ForeignKey, Integer, MetaData, Table, Text, bindparam, create_engine, text
+from sqlalchemy.sql import quoted_name
 
 from sqlalchemy.exc import IntegrityError
 
@@ -20,45 +21,82 @@ _corner_schema_lock = threading.Lock()
 
 corner_metadata = MetaData()
 accounts_table = Table(
-    "accounts", corner_metadata,
-    Column("userID", Integer, primary_key=True)
+    quoted_name("accounts", quote=False), corner_metadata,
+    Column(quoted_name("userID", quote=False), Integer, primary_key=True)
 )
 profile_color_sets_table = Table(
-    "profileColorSets", corner_metadata,
-    Column("profileSetID", Integer, primary_key=True)
+    quoted_name("profileColorSets", quote=False), corner_metadata,
+    Column(quoted_name("profileSetID", quote=False), Integer, primary_key=True)
 )
 cafe_corners_table = Table(
-    "cafeCorners", corner_metadata,
-    Column("cornerID", Integer, primary_key=True, autoincrement=True),
-    Column("userID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
-    Column("cornerName", Text),
-    Column("cornerDescription", Text),
-    Column("cornerBanner", Text),
-    Column("cornerColorTheme", Integer, ForeignKey("profileColorSets.profileSetID", ondelete="SET NULL")),
-    Column("cornerURLEnabled", Integer),
-    Column("cornerURL", Text),
-    Column("creationDate", Integer)
+    quoted_name("cafeCorners", quote=False), corner_metadata,
+    Column(quoted_name("cornerID", quote=False), Integer, primary_key=True, autoincrement=True),
+    Column(quoted_name("userID", quote=False), Integer,
+           ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
+    Column(quoted_name("cornerName", quote=False), Text),
+    Column(quoted_name("cornerDescription", quote=False), Text),
+    Column(quoted_name("cornerBanner", quote=False), Text),
+    Column(quoted_name("cornerColorTheme", quote=False), Integer,
+           ForeignKey("profileColorSets.profileSetID", ondelete="SET NULL")),
+    Column(quoted_name("cornerURLEnabled", quote=False), Integer),
+    Column(quoted_name("cornerURL", quote=False), Text),
+    Column(quoted_name("creationDate", quote=False), Integer)
 )
 cafe_corner_members_table = Table(
-    "cafeCornerMembers", corner_metadata,
-    Column("cornerID", Integer, ForeignKey("cafeCorners.cornerID", ondelete="CASCADE"), primary_key=True),
-    Column("userID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), primary_key=True),
+    quoted_name("cafeCornerMembers", quote=False), corner_metadata,
+    Column(quoted_name("cornerID", quote=False), Integer,
+           ForeignKey("cafeCorners.cornerID", ondelete="CASCADE"), primary_key=True),
+    Column(quoted_name("userID", quote=False), Integer,
+           ForeignKey("accounts.userID", ondelete="CASCADE"), primary_key=True),
     Column("role", Text, nullable=False),
-    Column("joinedDate", Integer)
+    Column(quoted_name("joinedDate", quote=False), Integer)
 )
 corner_invitations_table = Table(
-    "cornerInvitations", corner_metadata,
-    Column("invitationID", Integer, primary_key=True, autoincrement=True),
-    Column("cornerID", Integer, ForeignKey("cafeCorners.cornerID", ondelete="CASCADE"), nullable=False),
-    Column("inviterUserID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
-    Column("invitedUserID", Integer, ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
-    Column("invitationStatus", Text, nullable=False, default="pending"),
-    Column("createdAt", Integer, nullable=False)
+    quoted_name("cornerInvitations", quote=False), corner_metadata,
+    Column(quoted_name("invitationID", quote=False), Integer, primary_key=True, autoincrement=True),
+    Column(quoted_name("cornerID", quote=False), Integer,
+           ForeignKey("cafeCorners.cornerID", ondelete="CASCADE"), nullable=False),
+    Column(quoted_name("inviterUserID", quote=False), Integer,
+           ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
+    Column(quoted_name("invitedUserID", quote=False), Integer,
+           ForeignKey("accounts.userID", ondelete="CASCADE"), nullable=False),
+    Column(quoted_name("invitationStatus", quote=False), Text, nullable=False, default="pending"),
+    Column(quoted_name("createdAt", quote=False), Integer, nullable=False)
 )
 
 
 def connect_to_database():
     return DB_engine.connect()
+
+
+_MAPPING_KEY_NAMES = {
+    name.lower(): name
+    for name in (
+        "accountStanding", "channelURLEnabled", "channelURL", "cornerBanner",
+        "cornerColorTheme", "cornerDescription", "cornerID", "cornerName",
+        "cornerURL", "cornerURLEnabled", "creationDate", "creatorUsername",
+        "displayName", "eventCSSDir", "eventHTMLDir", "eventID", "eventImagesDir",
+        "eventJSDir", "eventName", "featureID", "invitationID", "inviterUsername",
+        "joinedDate", "memberCount", "profileColorTheme", "profilePicture",
+        "profilePictureBorderColor", "profileSetID", "role", "roleID",
+        "roleName", "roleNames", "userID", "username",
+    )
+}
+
+
+def _canonicalize_mapping(row):
+    return {
+        _MAPPING_KEY_NAMES.get(key.lower(), key): value
+        for key, value in row.items()
+    }
+
+
+def _canonicalize_mappings(result):
+    return [_canonicalize_mapping(row) for row in result.mappings()]
+
+
+def _quote_identifier(identifier):
+    return DB_engine.dialect.identifier_preparer.quote(identifier)
 
 
 def fetch_latest_videos():
@@ -370,11 +408,19 @@ def fetch_user_recommended_feed(userID):
         top_video_tags = [tag for tag, _ in rank_video_tags.most_common(10)]
 
         print(top_video_tags)
+        if not top_video_tags:
+            conn.close()
+            return []
 
-        tag_parameters = {
-            f"tag{i}": f"%,{tag.replace(' ', '')},%"
-            for i, tag in enumerate(top_video_tags)
-        }
+        tag_parameters = {}
+        for i, tag in enumerate(top_video_tags):
+            normalized_tag = tag.replace(" ", "").lower()
+            tag_parameters.update({
+                f"tag{i}_exact": normalized_tag,
+                f"tag{i}_start": f"{normalized_tag},%",
+                f"tag{i}_middle": f"%,{normalized_tag},%",
+                f"tag{i}_end": f"%,{normalized_tag}",
+            })
 
         result = conn.execute(text(f"""
                             SELECT videos.videoID, accounts.username, videos.videoTitle, videos.views, videos.videoThumbnail, 
@@ -384,10 +430,18 @@ def fetch_user_recommended_feed(userID):
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            WHERE ({" OR ".join([f"(',' || REPLACE(videoTags, ' ', '') || ',') LIKE :tag{i}" for i in range(len(top_video_tags))])}) AND accountStanding != 'Suspended'
-                    """), tag_parameters)
+                            WHERE ({" OR ".join([
+                                f"(LOWER(REPLACE(videoTags, ' ', '')) = :tag{i}_exact "
+                                f"OR LOWER(REPLACE(videoTags, ' ', '')) LIKE :tag{i}_start "
+                                f"OR LOWER(REPLACE(videoTags, ' ', '')) LIKE :tag{i}_middle "
+                                f"OR LOWER(REPLACE(videoTags, ' ', '')) LIKE :tag{i}_end)"
+                                for i in range(len(top_video_tags))
+                            ])}) AND accountStanding != 'Suspended'
+                                    """), tag_parameters)
         recommended_videos = result.fetchall()
+        conn.close()
     else:
+        conn.close()
         recommended_videos = []
 
     return recommended_videos
@@ -428,15 +482,17 @@ def fetch_comments_section(userID, videoID):
     result = conn.execute(text("""
                             SELECT comments.commentID, accounts.username, comments.comment, profiles.profilePicture, 
                             profileColorSets.profilePictureBorderColor, comments.userID,
-                            COUNT(likedComments.commentID) AS likeCount, SUM(likedComments.userID = :userID) AS isLikedByUser, 
+                            (SELECT COUNT(*) FROM likedComments
+                             WHERE likedComments.commentID = comments.commentID) AS likeCount,
+                            (SELECT COUNT(*) FROM likedComments
+                             WHERE likedComments.commentID = comments.commentID
+                               AND likedComments.userID = :userID) AS isLikedByUser,
                             accounts.accountStanding
                             FROM comments
                             JOIN accounts ON comments.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            LEFT JOIN likedComments ON likedComments.commentID = comments.commentID
                             WHERE comments.videoID = :videoID AND accountStanding != 'Suspended'
-                            GROUP BY comments.commentID
                             ORDER BY comments.commentID DESC 
                             """), {"userID": userID, "videoID": videoID})
     comments = result.fetchall()
@@ -490,7 +546,7 @@ def fetch_search_results(searchType, searchQueryForDB, userID):
                             JOIN accounts ON videos.userID = accounts.userID
                             JOIN profiles ON profiles.userID = accounts.userID
                             JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                            WHERE videos.videoTitle LIKE :videoTitle AND accountStanding != 'Suspended'
+                            WHERE LOWER(videos.videoTitle) LIKE LOWER(:videoTitle) AND accountStanding != 'Suspended'
                             ORDER BY views DESC  -- Shows newest first
                         """), {"videoTitle": searchQueryForDB})
         resultsFromSearch = result.fetchall()
@@ -507,7 +563,7 @@ def fetch_search_results(searchType, searchQueryForDB, userID):
                                     JOIN profiles ON profiles.userID = accounts.userID
                                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
                                     JOIN subscriptions ON subscriptions.subscribedToUserID = accounts.userID
-                                    WHERE videos.videoTitle LIKE :videoTitle AND subscriptions.userID = :userID AND accountStanding != 'Suspended'
+                                    WHERE LOWER(videos.videoTitle) LIKE LOWER(:videoTitle) AND subscriptions.userID = :userID AND accountStanding != 'Suspended'
                                     ORDER BY views DESC  -- Shows newest first
                                 """), {"videoTitle": searchQueryForDB, "userID": userID})
         resultsFromSearch = result.fetchall()
@@ -531,6 +587,9 @@ def initialize_corner_schema():
     global _corner_schema_engine
     with _corner_schema_lock:
         if _corner_schema_engine is DB_engine:
+            return
+        if DB_engine.dialect.name in {"mysql", "postgresql"}:
+            _corner_schema_engine = DB_engine
             return
         corner_metadata.create_all(
             DB_engine,
@@ -556,7 +615,7 @@ def fetch_corners_for_explore():
             ) AS memberCounts ON memberCounts.cornerID = cafeCorners.cornerID
             ORDER BY cafeCorners.creationDate DESC, cafeCorners.cornerID DESC
         """))
-        return result.mappings().all()
+        return _canonicalize_mappings(result)
 
 
 def fetch_corners_for_user(userID):
@@ -578,7 +637,7 @@ def fetch_corners_for_user(userID):
             WHERE userMembers.userID = :userID
             ORDER BY cafeCorners.creationDate DESC, cafeCorners.cornerID DESC
         """), {"userID": userID})
-        return result.mappings().all()
+        return _canonicalize_mappings(result)
 
 
 def fetch_corner_card_members(cornerIDs):
@@ -586,8 +645,9 @@ def fetch_corner_card_members(cornerIDs):
         return {}
 
     initialize_corner_schema()
+    role_column = _quote_identifier("role")
     with connect_to_database() as conn:
-        result = conn.execute(text("""
+        result = conn.execute(text(f"""
             SELECT cafeCornerMembers.cornerID, accounts.userID, accounts.username,
                    profiles.profilePicture, profileColorSets.profilePictureBorderColor
             FROM cafeCornerMembers
@@ -596,11 +656,13 @@ def fetch_corner_card_members(cornerIDs):
             LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
             WHERE cafeCornerMembers.cornerID IN :cornerIDs
             ORDER BY cafeCornerMembers.cornerID,
-                     CASE WHEN cafeCornerMembers.role = 'Creator' THEN 0 ELSE 1 END,
+                     CASE WHEN cafeCornerMembers.{role_column} = 'Creator' THEN 0 ELSE 1 END,
                      LOWER(accounts.username)
-        """).bindparams(bindparam("cornerIDs", expanding=True)), {"cornerIDs": cornerIDs})
+        """).bindparams(bindparam("cornerIDs", expanding=True)),
+            {"cornerIDs": cornerIDs})
         membersByCorner = {cornerID: [] for cornerID in cornerIDs}
         for member in result.mappings():
+            member = _canonicalize_mapping(member)
             members = membersByCorner[member["cornerID"]]
             if len(members) < 4:
                 members.append(member)
@@ -622,7 +684,8 @@ def fetch_corner_by_id(cornerID):
             ) AS memberCounts ON memberCounts.cornerID = cafeCorners.cornerID
             WHERE cafeCorners.cornerID = :cornerID
         """), {"cornerID": cornerID})
-        return result.mappings().first()
+        row = result.mappings().first()
+        return _canonicalize_mapping(row) if row else None
 
 
 def fetch_corner_by_url(cornerURL):
@@ -641,26 +704,29 @@ def fetch_corner_by_url(cornerURL):
             WHERE cafeCorners.cornerURLEnabled = 1
               AND LOWER(cafeCorners.cornerURL) = LOWER(:cornerURL)
         """), {"cornerURL": cornerURL})
-        return result.mappings().first()
+        row = result.mappings().first()
+        return _canonicalize_mapping(row) if row else None
 
 
 def fetch_corner_members(cornerID):
     initialize_corner_schema()
+    role_column = _quote_identifier("role")
     with connect_to_database() as conn:
-        result = conn.execute(text("""
+        result = conn.execute(text(f"""
             SELECT accounts.userID, accounts.username, profiles.profilePicture,
                    profileColorSets.profilePictureBorderColor,
-                   profiles.channelURLEnabled, profiles.channelURL, cafeCornerMembers.role,
+                   profiles.channelURLEnabled, profiles.channelURL,
+                   cafeCornerMembers.{role_column},
                    cafeCornerMembers.joinedDate
             FROM cafeCornerMembers
             JOIN accounts ON cafeCornerMembers.userID = accounts.userID
             LEFT JOIN profiles ON profiles.userID = accounts.userID
             LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
             WHERE cafeCornerMembers.cornerID = :cornerID
-            ORDER BY CASE WHEN cafeCornerMembers.role = 'Creator' THEN 0 ELSE 1 END,
+            ORDER BY CASE WHEN cafeCornerMembers.{role_column} = 'Creator' THEN 0 ELSE 1 END,
                      LOWER(accounts.username)
         """), {"cornerID": cornerID})
-        return result.mappings().all()
+        return _canonicalize_mappings(result)
 
 
 def create_corner(userID, cornerName, cornerDescription, cornerURLEnabled, cornerURL):
@@ -684,10 +750,12 @@ def create_corner(userID, cornerName, cornerDescription, cornerURLEnabled, corne
                 "creationDate": int(time.time())
             }))
             cornerID = result.inserted_primary_key[0]
-            conn.execute(text("""
-                INSERT INTO cafeCornerMembers (cornerID, userID, role, joinedDate)
+            role_column = _quote_identifier("role")
+            conn.execute(text(f"""
+                INSERT INTO cafeCornerMembers (cornerID, userID, {role_column}, joinedDate)
                 VALUES (:cornerID, :userID, 'Creator', :joinedDate)
-            """), {"cornerID": cornerID, "userID": userID, "joinedDate": int(time.time())})
+            """),
+                {"cornerID": cornerID, "userID": userID, "joinedDate": int(time.time())})
             return cornerID
 
 
@@ -784,7 +852,7 @@ def fetch_pending_corner_invitations(userID):
               AND cornerInvitations.invitationStatus = 'pending'
             ORDER BY cornerInvitations.createdAt DESC, cornerInvitations.invitationID DESC
         """), {"userID": userID})
-        return result.mappings().all()
+        return _canonicalize_mappings(result)
 
 
 def accept_corner_invitation(userID, cornerID):
@@ -805,8 +873,9 @@ def accept_corner_invitation(userID, cornerID):
                 WHERE cornerID = :cornerID AND userID = :userID
             """), {"cornerID": cornerID, "userID": userID}).first()
             if not membership:
-                conn.execute(text("""
-                    INSERT INTO cafeCornerMembers (cornerID, userID, role, joinedDate)
+                role_column = _quote_identifier("role")
+                conn.execute(text(f"""
+                    INSERT INTO cafeCornerMembers (cornerID, userID, {role_column}, joinedDate)
                     VALUES (:cornerID, :userID, 'Member', :joinedDate)
                 """), {"cornerID": cornerID, "userID": userID, "joinedDate": int(time.time())})
             conn.execute(text("""
@@ -848,7 +917,8 @@ def fetch_admin_accounts():
             LEFT JOIN profiles ON profiles.userID = accounts.userID
             LEFT JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
             ORDER BY LOWER(accounts.username)
-        """)).mappings().all()
+        """))
+        accounts = _canonicalize_mappings(accounts)
         roles = conn.execute(text("""
             SELECT user_roles.userID, roles.roleName
             FROM user_roles
@@ -1081,7 +1151,7 @@ def login_auth_check(username):
 
     conn.close()
 
-    return user
+    return _canonicalize_mapping(user) if user else None
 
 
 def fetch_video_view_count_for_watch_page(videoID):
@@ -1177,14 +1247,14 @@ def fetch_user_playlists(userID):
     result = conn.execute(text("""
                     SELECT playlists.playlistID, playlists.userID, playlists.playlistName, playlists.playlistType, 
                     playlists.visibilityType, accounts.username, profiles.profilePicture, 
-                    profileColorSets.profilePictureBorderColor, COUNT(playlist_contents.videoID) AS videoCount
+                    profileColorSets.profilePictureBorderColor,
+                    (SELECT COUNT(*) FROM playlist_contents
+                     WHERE playlist_contents.playlistID = playlists.playlistID) AS videoCount
                     FROM playlists
                     JOIN accounts ON playlists.userID = accounts.userID
                     JOIN profiles ON profiles.userID = accounts.userID
                     JOIN profileColorSets ON profiles.profileColorTheme = profileColorSets.profileSetID
-                    LEFT JOIN playlist_contents ON playlists.playlistID = playlist_contents.playlistID
-                    WHERE playlists.userID = :userID AND playlistType != "watch_queue"
-                    GROUP BY playlists.playlistID
+                    WHERE playlists.userID = :userID AND playlists.playlistType != 'watch_queue'
                     ORDER BY playlists.playlistID DESC
                     """), {"userID": userID})
     userPlaylists = result.fetchall()
@@ -1198,7 +1268,7 @@ def validate_userID(userID):
     """Checks if the userID exists on the database"""
     conn = connect_to_database()
 
-    result = conn.execute(text("SELECT * FROM accounts WHERE userID = userID"), {"userID": userID})
+    result = conn.execute(text("SELECT * FROM accounts WHERE userID = :userID"), {"userID": userID})
     foundUserID = result.fetchone()
 
     conn.close()
@@ -1857,4 +1927,5 @@ def fetch_user_role(userID):
             WHERE user_roles.userID = :userID
             ORDER BY CASE WHEN roles.roleName = 'Admin' THEN 0 ELSE 1 END, roles.roleID
         """), {"userID": userID})
-        return result.mappings().first()
+        row = result.mappings().first()
+        return _canonicalize_mapping(row) if row else None

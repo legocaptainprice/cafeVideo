@@ -1,9 +1,12 @@
+import os
+
+
 # Host settings
 ip_address = "localhost"
 port = 5000
 debug = True
 # Database settings
-sqlalchemy_db_path = "sqlite:///cafeDatabase.db"
+sqlalchemy_db_path = os.environ.get("CAFE_DATABASE_URL", "sqlite:///cafeDatabase.db")
 # Security settings
 session_cookie_httponly = True
 session_cookie_secure = False

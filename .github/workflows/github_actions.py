@@ -19,9 +19,22 @@ import sql_commands
 
 @pytest.fixture
 def application(tmp_path, monkeypatch):
-    database_path = tmp_path / "cafeDatabase.db"
-    shutil.copy2(PROJECT_ROOT / "cafeDatabase.db", database_path)
-    engine = create_engine(f"sqlite:///{database_path}")
+    test_database_url = os.environ.get("CAFE_TEST_DATABASE_URL")
+    if test_database_url:
+        engine = create_engine(test_database_url)
+        if engine.dialect.name not in {"mysql", "postgresql"}:
+            raise ValueError(f"Unsupported integration-test database: {engine.dialect.name}")
+        schema_path = PROJECT_ROOT / "sql" / (
+            "mysql.sql" if engine.dialect.name == "mysql" else "postgresql.sql"
+        )
+        with engine.begin() as connection:
+            for statement in schema_path.read_text(encoding="utf-8").split(";"):
+                if statement.strip():
+                    connection.exec_driver_sql(statement).close()
+    else:
+        database_path = tmp_path / "cafeDatabase.db"
+        shutil.copy2(PROJECT_ROOT / "cafeDatabase.db", database_path)
+        engine = create_engine(f"sqlite:///{database_path}")
     monkeypatch.setattr(sql_commands, "DB_engine", engine)
     monkeypatch.setattr(sql_commands, "_corner_schema_engine", None)
     monkeypatch.setitem(main.cafe.config, "TESTING", True)
@@ -62,6 +75,21 @@ def scalar(engine, query, parameters=None):
         return connection.execute(text(query), parameters or {}).scalar()
 
 
+def test_database_mapping_keys_are_case_stable():
+    row = main.sql_commands._canonicalize_mapping({
+        "cornerid": 7,
+        "creatorusername": "creator",
+        "membercount": 2,
+        "userid": 9,
+    })
+    assert row == {
+        "cornerID": 7,
+        "creatorUsername": "creator",
+        "memberCount": 2,
+        "userID": 9,
+    }
+
+
 def test_manifest_versions_preserve_build_numbers_across_channels():
     assert main.manifest.full_version(115, "alpha") == "1.0.0.build115.alpha"
     assert main.manifest.full_version(116, "beta") == "1.0.0.build116.beta"
@@ -97,6 +125,8 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
         creator_id, _ = register_and_login(creator, creator_name)
         member_id, _ = register_and_login(member, member_name)
         decliner_id, _ = register_and_login(decliner, declining_name)
+        assert sql_commands.validate_userID(creator_id) is not None
+        assert sql_commands.validate_userID(creator_id + 100000) is None
 
         with engine.begin() as connection:
             admin_role_id = connection.execute(
