@@ -1063,18 +1063,19 @@ def aboutPage():
     userID = session.get('userID')
 
     WEB_TITLE = manifest.WEB_TITLE
-    VERSION = f"{manifest.MAJOR}.{manifest.MINOR}.{manifest.PATCH}"
-    CHANNEL = manifest.CHANNEL
+    DISPLAY_VERSION = manifest.DISPLAY_VERSION
     CODENAME = manifest.CODENAME
     COPYRIGHT = manifest.COPYRIGHT
 
     if username:
 
-        return render_template('about.html', username=username, userID=userID, WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
+        return render_template('about.html', username=username, userID=userID,
+                               WEB_TITLE=WEB_TITLE, DISPLAY_VERSION=DISPLAY_VERSION,
+                               CODENAME=CODENAME, COPYRIGHT=COPYRIGHT)
     else:
         return render_template('about.html', WEB_TITLE=WEB_TITLE,
-                               VERSION=VERSION, CODENAME=CODENAME, CHANNEL=CHANNEL, COPYRIGHT=COPYRIGHT)
+                               DISPLAY_VERSION=DISPLAY_VERSION,
+                               CODENAME=CODENAME, COPYRIGHT=COPYRIGHT)
 
 
 @cafe.route('/saves/add', methods=["POST"])

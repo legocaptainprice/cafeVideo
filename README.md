@@ -23,6 +23,11 @@ To run the suite locally, install the application requirements and `pytest`, set
 python -m pytest -v .github/workflows/github_actions.py
 ```
 
+## Versioning and builds
+`manifest.py` defines the current version and release channel (`alpha`, `beta`, `rc`, or `release`). A successful build on `main` uses the commit's position in the complete `main` history as its monotonically increasing build number; with 114 commits currently on `main`, the next single commit there will build as `1.0.0.build115.alpha`. Changing channels does not reset the number. The same no-space version string is shown in the app and used for the artifact name, for example `cafeVideo-1.0.0.build115.alpha.zip`. Pull requests and other branches do not create builds.
+
+Every successful main-branch build uploads a versioned artifact. Alpha builds do not create GitHub Releases. Beta and release-candidate (`rc`) builds create prereleases, while `release` builds create regular GitHub Releases; each release includes its matching artifact. Pull requests run tests but do not publish artifacts or releases.
+
 ## License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.

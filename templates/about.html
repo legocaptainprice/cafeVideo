@@ -16,11 +16,7 @@
         <div class="cafe-not-found">
             <h1>{{ WEB_TITLE }}</h1>
             <p>{{ CODENAME }}</p>
-            {% if CHANNEL %}
-                <p>{{ VERSION + "-" + CHANNEL}}</p>
-            {% else %}
-                <p>{{ VERSION }}</p>
-            {% endif %}
+            <p>{{ DISPLAY_VERSION }}</p>
             <p>{{ COPYRIGHT }}</p>
         </div>
     </div>

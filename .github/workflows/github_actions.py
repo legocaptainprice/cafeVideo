@@ -62,6 +62,17 @@ def scalar(engine, query, parameters=None):
         return connection.execute(text(query), parameters or {}).scalar()
 
 
+def test_manifest_versions_preserve_build_numbers_across_channels():
+    assert main.manifest.full_version(115, "alpha") == "1.0.0.build115.alpha"
+    assert main.manifest.full_version(116, "beta") == "1.0.0.build116.beta"
+    assert main.manifest.full_version(117, "rc") == "1.0.0.build117.rc"
+    assert main.manifest.full_version(118, "release") == "1.0.0.build118.release"
+    assert main.manifest.display_version(117, "rc") == "1.0.0.build117.rc"
+    assert main.manifest.release_tag(118, "release") == "v1.0.0.build118.release"
+    with pytest.raises(ValueError, match="Unsupported release channel"):
+        main.manifest.full_version(104, "preview")
+
+
 def test_routes_and_end_to_end_user_flows(application, tmp_path):
     engine = application
     token = uuid.uuid4().hex[:10]
@@ -445,6 +456,8 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
         for path, anonymous_status, authenticated_status in public_and_private_pages:
             assert anonymous.get(path).status_code == anonymous_status, f"anonymous GET {path}"
             assert creator.get(path).status_code == authenticated_status, f"authenticated GET {path}"
+
+        assert main.manifest.DISPLAY_VERSION.encode() in anonymous.get("/about").data
 
         expected_get_endpoints = {
             "aboutPage", "accountSubscriptions", "adminPage", "cornerCreate",
