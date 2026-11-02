@@ -40,7 +40,7 @@ jobs:
           MINOR=$(python -c "import manifest; print(manifest.MINOR)")
           PATCH=$(python -c "import manifest; print(manifest.PATCH)")
           VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          CHANNEL=$(python -c "import manifest; print(manifest.channel)")
+          CHANNEL=$(python -c "import manifest; print(manifest.CHANNEL)")
           BUILD_NUMBER=$(git rev-list --count HEAD)
 
           ARTIFACT_NAME="cafeVideo-${VERSION}.build${BUILD_NUMBER}.${CHANNEL}"
