@@ -36,7 +36,10 @@ jobs:
       - name: Package tested commit
         if: success()
         run: |
-          VERSION=$(python -c "import manifest; print(manifest.version)")
+          MAJOR=$(python -c "import manifest; print(manifest.MAJOR)")
+          MINOR=$(python -c "import manifest; print(manifest.MINOR)")
+          PATCH=$(python -c "import manifest; print(manifest.PATCH)")
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
           CHANNEL=$(python -c "import manifest; print(manifest.channel)")
           BUILD_NUMBER=$(git rev-list --count HEAD)
 
