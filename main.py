@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, url_for, session, jsonify, redirect, flash, abort, send_file
+from sqlalchemy.exc import SQLAlchemyError
 import hmac
 import os
 import re
@@ -76,6 +77,10 @@ def read_markdown_files(markdown_file, mode):
 
 def corner_csrf_token():
     return session.setdefault("corner_csrf_token", secrets.token_urlsafe(32))
+
+
+def creator_csrf_token():
+    return session.setdefault("creator_csrf_token", secrets.token_urlsafe(32))
 
 
 def validate_corner_csrf():
@@ -316,6 +321,115 @@ def uploadVideo():
         if success:
             return redirect(url_for('indexPage'))
         return render_template('upload.html', error=message)
+
+
+@cafe.route('/coffee/brew')
+def creatorDashboard():
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+
+    return render_template(
+        "creator_dashboard.html",
+        username=session.get("username"),
+        userID=userID,
+        accountStanding=sql_commands.fetch_account_standing(userID),
+        videos=sql_commands.fetch_creator_videos(userID),
+        creator_csrf_token=creator_csrf_token(),
+        time_ago=time_ago
+    )
+
+
+@cafe.route('/coffee/brew/<int:videoID>/edit', methods=["POST"])
+def editCreatorVideo(videoID):
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+    if sql_commands.fetch_account_standing(userID) != "Active":
+        abort(403)
+
+    submittedToken = request.form.get("csrf_token", "")
+    sessionToken = session.get("creator_csrf_token", "")
+    if not sessionToken or not hmac.compare_digest(submittedToken, sessionToken):
+        abort(400)
+
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
+    videoTags = request.form.get("videoTags", "").strip()
+    if not title or len(title) > 255 or not description:
+        flash("Enter a title (up to 255 characters) and description.", "error")
+        return redirect(url_for("creatorDashboard"))
+
+    thumbnail = request.files.get("thumbnail")
+    thumbnailFilename = None
+    thumbnailPath = None
+    if thumbnail and thumbnail.filename:
+        if not allowedFiletypes(thumbnail.filename, cafe.config['ALLOWED_THUMBNAIL_EXTENSIONS']):
+            flash("Unsupported thumbnail file type.", "error")
+            return redirect(url_for("creatorDashboard"))
+        extension = Path(secure_filename(thumbnail.filename)).suffix.lower()
+        thumbnailFilename = f"{secrets.token_hex(16)}{extension}"
+        thumbnailPath = Path(cafe.config['UPLOAD_THUMBNAILS_FOLDER']) / thumbnailFilename
+        thumbnail.save(thumbnailPath)
+
+    try:
+        oldThumbnail = sql_commands.update_creator_video(
+            userID, videoID, title, description, videoTags, thumbnailFilename
+        )
+    except SQLAlchemyError:
+        if thumbnailPath:
+            thumbnailPath.unlink(missing_ok=True)
+        raise
+    if oldThumbnail is None:
+        if thumbnailPath:
+            thumbnailPath.unlink(missing_ok=True)
+        abort(404)
+
+    if oldThumbnail and thumbnailFilename and oldThumbnail != thumbnailFilename:
+        oldThumbnailPath = Path(cafe.config['UPLOAD_THUMBNAILS_FOLDER']) / secure_filename(oldThumbnail)
+        if (
+            oldThumbnail != "videotemplate.png"
+            and not sql_commands.video_media_is_referenced("videoThumbnail", oldThumbnail)
+        ):
+            oldThumbnailPath.unlink(missing_ok=True)
+
+    flash("Video details updated.", "success")
+    return redirect(url_for("creatorDashboard"))
+
+
+@cafe.route('/coffee/brew/<int:videoID>/delete', methods=["POST"])
+def deleteCreatorVideo(videoID):
+    userID = session.get("userID")
+    if userID is None:
+        return redirect(url_for("loginPage"))
+    if sql_commands.fetch_account_standing(userID) != "Active":
+        abort(403)
+
+    submittedToken = request.form.get("csrf_token", "")
+    sessionToken = session.get("creator_csrf_token", "")
+    if not sessionToken or not hmac.compare_digest(submittedToken, sessionToken):
+        abort(400)
+
+    deletedVideo = sql_commands.delete_creator_video(userID, videoID)
+    if deletedVideo is None:
+        abort(404)
+
+    videoFilename = secure_filename(deletedVideo["videoFile"] or "")
+    thumbnailFilename = secure_filename(deletedVideo["videoThumbnail"] or "")
+    if (
+        videoFilename
+        and not deletedVideo["videoFileReferenced"]
+    ):
+        (Path(cafe.config['UPLOAD_FOLDER']) / videoFilename).unlink(missing_ok=True)
+    if (
+        thumbnailFilename
+        and thumbnailFilename != "videotemplate.png"
+        and not deletedVideo["videoThumbnailReferenced"]
+    ):
+        (Path(cafe.config['UPLOAD_THUMBNAILS_FOLDER']) / thumbnailFilename).unlink(missing_ok=True)
+
+    flash("Video deleted.", "success")
+    return redirect(url_for("creatorDashboard"))
 
 
 @cafe.route('/watch')

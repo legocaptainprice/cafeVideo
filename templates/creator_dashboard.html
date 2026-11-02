@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include "components/css.html" %}
+    {% include "components/scripts.html" %}
+    <title>cafeVideo - Creator dashboard</title>
+</head>
+<body>
+    {% include "components/navbar.html" %}
+    {% include "components/notificationsPanel.html" %}
+    <div class="cafe-main-body">
+        {% include "components/sidebar.html" %}
+        <main class="cafe-video-list-body">
+            <section class="creator-dashboard">
+                <p class="cafe-video-list-title creator-dashboard-title">Creator dashboard</p>
+                <p>Manage videos you have uploaded.</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <p class="admin-message admin-message-{{ category }}" role="status">{{ message }}</p>
+                    {% endfor %}
+                {% endwith %}
+
+                {% if accountStanding != "Active" %}
+                    <p class="creator-dashboard-notice">Video changes are unavailable while your account is suspended.</p>
+                {% endif %}
+
+                {% if videos %}
+                    <div class="creator-video-list">
+                        {% for video in videos %}
+                            <article class="creator-video-card">
+                                <a class="creator-video-thumbnail" href="{{ url_for('watchPage', v=video['video_id']) }}" aria-label="Watch {{ video['video_title'] }}">
+                                    <img src="{{ url_for('static', filename='thumbnails/' + (video['video_thumbnail'] or 'videotemplate.png')) }}" alt="">
+                                </a>
+                                <div class="creator-video-content">
+                                    <div class="creator-video-summary">
+                                        <a class="creator-video-title" href="{{ url_for('watchPage', v=video['video_id']) }}">{{ video['video_title'] }}</a>
+                                        <p>{{ video['views'] }} views · {{ time_ago(video['uploaded_at']) }}</p>
+                                    </div>
+                                    {% if accountStanding == "Active" %}
+                                        <div class="creator-video-actions">
+                                            <form class="creator-video-edit-form" action="{{ url_for('editCreatorVideo', videoID=video['video_id']) }}" method="POST" enctype="multipart/form-data">
+                                                <input type="hidden" name="csrf_token" value="{{ creator_csrf_token }}">
+                                                <label>Title
+                                                    <input type="text" name="title" value="{{ video['video_title'] }}" maxlength="255" required>
+                                                </label>
+                                                <label>Description
+                                                    <textarea name="description" rows="3" required>{{ video['video_description'] or '' }}</textarea>
+                                                </label>
+                                                <label>Tags
+                                                    <input type="text" name="videoTags" value="{{ video['video_tags'] or '' }}" placeholder="Separate tags with commas">
+                                                </label>
+                                                <label class="creator-video-thumbnail-upload">Replace thumbnail
+                                                    <input type="file" name="thumbnail" accept="image/*">
+                                                </label>
+                                                <button class="corner-action-link" type="submit">Save changes</button>
+                                            </form>
+                                            <form class="creator-video-delete-form" action="{{ url_for('deleteCreatorVideo', videoID=video['video_id']) }}" method="POST" onsubmit="return confirm('Delete this video? This cannot be undone.');">
+                                                <input type="hidden" name="csrf_token" value="{{ creator_csrf_token }}">
+                                                <button class="creator-video-delete" type="submit">Delete video</button>
+                                            </form>
+                                        </div>
+                                    {% else %}
+                                        <p class="creator-video-description">{{ video['video_description'] or '' }}</p>
+                                        <p class="creator-video-tags">Tags: {{ video['video_tags'] or 'None' }}</p>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="cafe-not-found">
+                        <h1>No videos yet</h1>
+                        <h2>Videos you upload will appear here</h2>
+                        <a class="corner-action-link" href="{{ url_for('upload') }}">Upload a video</a>
+                    </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

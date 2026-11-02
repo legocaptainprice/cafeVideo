@@ -1693,6 +1693,115 @@ def uploadVideoToDatabase(userID, title, description, videoTags, filename, thumb
         conn.close()
 
 
+def fetch_creator_videos(userID):
+    with DB_engine.connect() as conn:
+        result = conn.execute(text("""
+            SELECT videoID AS video_id, videoTitle AS video_title,
+                   videoDescription AS video_description, videoTags AS video_tags,
+                   videoFile AS video_file, videoThumbnail AS video_thumbnail,
+                   datetime AS uploaded_at, views
+            FROM videos
+            WHERE userID = :userID
+            ORDER BY datetime DESC, videoID DESC
+        """), {"userID": userID})
+        return [dict(row) for row in result.mappings()]
+
+
+def update_creator_video(userID, videoID, title, description, videoTags, thumbnailFilename=None):
+    with DB_engine.begin() as conn:
+        result = conn.execute(
+            text("""
+                SELECT videoThumbnail AS video_thumbnail
+                FROM videos
+                WHERE videoID = :videoID AND userID = :userID
+            """),
+            {"videoID": videoID, "userID": userID}
+        )
+        video = result.mappings().first()
+        if video is None:
+            return None
+
+        conn.execute(text("""
+            UPDATE videos
+            SET videoTitle = :title,
+                videoDescription = :description,
+                videoTags = :videoTags,
+                videoThumbnail = COALESCE(:thumbnailFilename, videoThumbnail)
+            WHERE videoID = :videoID AND userID = :userID
+        """), {
+            "title": title,
+            "description": description,
+            "videoTags": videoTags,
+            "thumbnailFilename": thumbnailFilename,
+            "videoID": videoID,
+            "userID": userID,
+        })
+        return video["video_thumbnail"]
+
+
+def delete_creator_video(userID, videoID):
+    with DB_engine.begin() as conn:
+        result = conn.execute(text("""
+            SELECT videoFile AS video_file, videoThumbnail AS video_thumbnail
+            FROM videos
+            WHERE videoID = :videoID AND userID = :userID
+        """), {"videoID": videoID, "userID": userID})
+        video = result.mappings().first()
+        if video is None:
+            return None
+
+        conn.execute(text("""
+            DELETE FROM likedReplies
+            WHERE replyID IN (
+                SELECT replyID FROM replies
+                WHERE commentID IN (SELECT commentID FROM comments WHERE videoID = :videoID)
+            )
+        """), {"videoID": videoID})
+        conn.execute(text("""
+            DELETE FROM likedComments
+            WHERE commentID IN (SELECT commentID FROM comments WHERE videoID = :videoID)
+        """), {"videoID": videoID})
+        conn.execute(text("""
+            DELETE FROM replies
+            WHERE commentID IN (SELECT commentID FROM comments WHERE videoID = :videoID)
+        """), {"videoID": videoID})
+        conn.execute(text("DELETE FROM comments WHERE videoID = :videoID"), {"videoID": videoID})
+        conn.execute(text("DELETE FROM playlist_contents WHERE videoID = :videoID"), {"videoID": videoID})
+        conn.execute(text("DELETE FROM likedVideos WHERE videoID = :videoID"), {"videoID": videoID})
+        conn.execute(text("DELETE FROM watchHistory WHERE videoID = :videoID"), {"videoID": videoID})
+        conn.execute(
+            text("DELETE FROM videos WHERE videoID = :videoID AND userID = :userID"),
+            {"videoID": videoID, "userID": userID}
+        )
+
+        videoFile = video["video_file"]
+        videoThumbnail = video["video_thumbnail"]
+        videoFileReferenced = conn.execute(
+            text("SELECT COUNT(*) FROM videos WHERE videoFile = :filename"),
+            {"filename": videoFile}
+        ).scalar_one() > 0
+        videoThumbnailReferenced = conn.execute(
+            text("SELECT COUNT(*) FROM videos WHERE videoThumbnail = :filename"),
+            {"filename": videoThumbnail}
+        ).scalar_one() > 0
+        return {
+            "videoFile": videoFile,
+            "videoThumbnail": videoThumbnail,
+            "videoFileReferenced": videoFileReferenced,
+            "videoThumbnailReferenced": videoThumbnailReferenced,
+        }
+
+
+def video_media_is_referenced(column, filename):
+    if column not in {"videoFile", "videoThumbnail"}:
+        raise ValueError("Unsupported video media column")
+    with DB_engine.connect() as conn:
+        return conn.execute(
+            text(f"SELECT COUNT(*) FROM videos WHERE {column} = :filename"),
+            {"filename": filename}
+        ).scalar_one() > 0
+
+
 def sendCommentToDatabase(videoID, userID, comment):
     """Sends the comment to the database"""
 

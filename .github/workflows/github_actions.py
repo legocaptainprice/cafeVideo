@@ -156,6 +156,10 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
             {"videoFile": video_name},
         )
         assert video_id is not None
+        assert anonymous.get("/coffee/brew").status_code == 302
+        assert creator.get("/coffee/brew").status_code == 200
+        with creator.session_transaction() as session:
+            creator_csrf = session["creator_csrf_token"]
 
         response = creator.post(
             "/uploadVideo",
@@ -168,11 +172,128 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
             content_type="multipart/form-data",
         )
         assert response.status_code == 302
+        fallback_video_id = scalar(
+            engine,
+            "SELECT videoID FROM videos WHERE videoFile = :videoFile",
+            {"videoFile": fallback_video_name},
+        )
+        assert fallback_video_id is not None
         assert scalar(
             engine,
             "SELECT videoThumbnail FROM videos WHERE videoFile = :videoFile",
             {"videoFile": fallback_video_name},
         ) == "videotemplate.png"
+        assert member.get("/coffee/brew").status_code == 200
+        with member.session_transaction() as session:
+            member_csrf = session["creator_csrf_token"]
+        assert member.post(
+            f"/coffee/brew/{video_id}/edit",
+            data={
+                "csrf_token": member_csrf,
+                "title": "Unauthorized edit",
+                "description": "Must not change",
+                "videoTags": "",
+            },
+        ).status_code == 404
+        assert scalar(
+            engine,
+            "SELECT videoTitle FROM videos WHERE videoID = :videoID",
+            {"videoID": video_id},
+        ) == f"Test video {token}"
+        response = creator.post(
+            f"/coffee/brew/{fallback_video_id}/edit",
+            data={
+                "csrf_token": creator_csrf,
+                "title": f"Edited video {token}",
+                "description": "Updated by the creator",
+                "videoTags": "updated,creator",
+                "thumbnail": (BytesIO(b"updated thumbnail"), f"dashboard_thumbnail_{token}.png"),
+            },
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 302
+        edited_thumbnail = scalar(
+            engine,
+            "SELECT videoThumbnail FROM videos WHERE videoID = :videoID",
+            {"videoID": fallback_video_id},
+        )
+        assert edited_thumbnail != "videotemplate.png"
+        edited_thumbnail_path = PROJECT_ROOT / "static" / "thumbnails" / edited_thumbnail
+        uploaded_files.append(edited_thumbnail_path)
+        assert edited_thumbnail_path.exists()
+        assert scalar(
+            engine,
+            "SELECT videoTitle FROM videos WHERE videoID = :videoID",
+            {"videoID": fallback_video_id},
+        ) == f"Edited video {token}"
+        assert scalar(
+            engine,
+            "SELECT videoDescription FROM videos WHERE videoID = :videoID",
+            {"videoID": fallback_video_id},
+        ) == "Updated by the creator"
+        assert scalar(
+            engine,
+            "SELECT videoTags FROM videos WHERE videoID = :videoID",
+            {"videoID": fallback_video_id},
+        ) == "updated,creator"
+        with engine.begin() as connection:
+            connection.execute(
+                text("INSERT INTO comments (videoID, userID, comment) VALUES (:videoID, :userID, :comment)"),
+                {"videoID": fallback_video_id, "userID": member_id, "comment": "Comment for deletion test"},
+            )
+            deletion_comment_id = connection.execute(
+                text("SELECT commentID FROM comments WHERE videoID = :videoID AND comment = :comment"),
+                {"videoID": fallback_video_id, "comment": "Comment for deletion test"},
+            ).scalar_one()
+            connection.execute(
+                text("INSERT INTO replies (commentID, userID, reply) VALUES (:commentID, :userID, :reply)"),
+                {"commentID": deletion_comment_id, "userID": creator_id, "reply": "Reply for deletion test"},
+            )
+            deletion_reply_id = connection.execute(
+                text("SELECT replyID FROM replies WHERE commentID = :commentID AND reply = :reply"),
+                {"commentID": deletion_comment_id, "reply": "Reply for deletion test"},
+            ).scalar_one()
+            connection.execute(
+                text("INSERT INTO likedComments (commentID, commenterID, userID) "
+                     "VALUES (:commentID, :commenterID, :userID)"),
+                {"commentID": deletion_comment_id, "commenterID": member_id, "userID": creator_id},
+            )
+            connection.execute(
+                text("INSERT INTO likedReplies (replyID, replierID, userID) "
+                     "VALUES (:replyID, :replierID, :userID)"),
+                {"replyID": deletion_reply_id, "replierID": creator_id, "userID": member_id},
+            )
+        assert creator.post(
+            f"/coffee/brew/{fallback_video_id}/delete",
+            data={"csrf_token": creator_csrf},
+        ).status_code == 302
+        assert scalar(
+            engine,
+            "SELECT COUNT(*) FROM videos WHERE videoID = :videoID",
+            {"videoID": fallback_video_id},
+        ) == 0
+        assert scalar(
+            engine,
+            "SELECT COUNT(*) FROM comments WHERE videoID = :videoID",
+            {"videoID": fallback_video_id},
+        ) == 0
+        assert scalar(
+            engine,
+            "SELECT COUNT(*) FROM replies WHERE commentID = :commentID",
+            {"commentID": deletion_comment_id},
+        ) == 0
+        assert scalar(
+            engine,
+            "SELECT COUNT(*) FROM likedComments WHERE commentID = :commentID",
+            {"commentID": deletion_comment_id},
+        ) == 0
+        assert scalar(
+            engine,
+            "SELECT COUNT(*) FROM likedReplies WHERE replyID = :replyID",
+            {"replyID": deletion_reply_id},
+        ) == 0
+        assert not (PROJECT_ROOT / "static" / "videos" / fallback_video_name).exists()
+        assert not edited_thumbnail_path.exists()
         assert creator.post(
             "/uploadVideo",
             data={
@@ -458,6 +579,7 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
             ("/register", 200, 302),
             ("/loginAuth", 302, 302),
             ("/upload", 302, 200),
+            ("/coffee/brew", 302, 200),
             (f"/watch?v={video_id}", 200, 200),
             (f"/results?search_query={token}", 200, 200),
             (f"/channel?id={creator_id}", 200, 200),
@@ -492,6 +614,7 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
         expected_get_endpoints = {
             "aboutPage", "accountSubscriptions", "adminPage", "cornerCreate",
             "cornerProfileByID", "cornerProfileByURL", "cornersExplore", "cornersPage",
+            "creatorDashboard",
             "editUserProfile", "explorePage", "getAccountProfile", "getAccountSettings",
             "guidelines_page", "indexPage", "license_page", "likedVideosPage", "loginAuthAPI",
             "loginPage", "logout", "notice_page", "notificationsPage", "redirectPage",
@@ -501,7 +624,8 @@ def test_routes_and_end_to_end_user_flows(application, tmp_path):
         }
         expected_post_endpoints = {
             "confirmAccountDetailsEdit", "cornerCreate", "cornerDeclineInvitation",
-            "cornerInvite", "cornerJoin", "likeCommentFromCommenterID",
+            "cornerInvite", "cornerJoin", "deleteCreatorVideo", "editCreatorVideo",
+            "likeCommentFromCommenterID",
             "likeReplyFromReplierID", "likeVideoFromCreatorID", "loginAuthAPI",
             "notification_action_read", "playlistAdd", "playlistCreate", "registerAccountAPI",
             "saveProfileSettings", "saveVideo", "searchRequest", "sendComment", "sendReply",

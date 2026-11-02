@@ -13,6 +13,7 @@
             <a class="sidebar-navigation-buttons" href="{{ url_for('userPlaylist') }}">Playlists</a>
             <a class="sidebar-navigation-buttons" href="{{ url_for('likedVideosPage') }}">Liked videos</a>
             <a class="sidebar-navigation-buttons" href="{{ url_for('viewSaves') }}">Saves</a>
+            <a class="sidebar-navigation-buttons" href="{{ url_for('creatorDashboard') }}">Creator dashboard</a>
             {% if userRole and userRole["roleName"] == "Admin" %}
                 <a class="sidebar-navigation-buttons" href="{{ url_for('adminPage') }}">Admin</a>
             {% endif %}
