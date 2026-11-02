@@ -36,14 +36,21 @@ jobs:
       - name: Package tested commit
         if: success()
         run: |
-          DATE=$(date -u +'%Y-%m-%d')
-          git archive --format=zip --output="cafeVideo-${DATE}.zip" HEAD
-          echo "ARTIFACT_NAME=cafeVideo-${DATE}.zip" >> "$GITHUB_ENV"
+          VERSION=$(python -c "import manifest; print(manifest.version)")
+          CHANNEL=$(python -c "import manifest; print(manifest.channel)")
+          BUILD_NUMBER=$(git rev-list --count HEAD)
+
+          ARTIFACT_NAME="cafeVideo-${VERSION}.build${BUILD_NUMBER}.${CHANNEL}"
+
+          git archive --format=zip --output="${ARTIFACT_NAME}.zip" HEAD
+
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}.zip" >> "$GITHUB_ENV"
+          echo "Build: ${ARTIFACT_NAME}"
 
       - name: Upload tested commit
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: cafeVideo-${{ github.run_id }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: ${{ env.ARTIFACT_NAME }}
           if-no-files-found: error
